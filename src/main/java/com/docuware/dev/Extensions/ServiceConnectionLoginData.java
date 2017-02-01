@@ -7,6 +7,7 @@ package com.docuware.dev.Extensions;
 
 import com.docuware.dev.settings.interop.DWProductTypes;
 import com.sun.jersey.client.apache.ApacheHttpClientHandler;
+
 import javax.ws.rs.core.MultivaluedMap;
 
 /**

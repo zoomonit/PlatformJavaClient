@@ -5,9 +5,6 @@
  */
 package com.docuware.dev.Extensions;
 
-import java.time.Instant;
-import java.util.Date;
-
 /**
  *
  * @author Patrick

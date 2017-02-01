@@ -7,13 +7,7 @@ package com.docuware.dev.Extensions;
 
 import com.docuware.dev.schema._public.services.Link;
 import com.docuware.dev.schema._public.services.Links;
-import com.docuware.dev.schema._public.services.platform.DialogInfo;
-import com.docuware.dev.schema._public.services.platform.Document;
-import com.docuware.dev.schema._public.services.platform.FileCabinet;
-import com.docuware.dev.schema._public.services.platform.ImportResult;
-import com.docuware.dev.schema._public.services.platform.ImportSettings;
-import com.docuware.dev.schema._public.services.platform.Section;
-import com.docuware.dev.schema._public.services.platform.SynchronizationSettings;
+import com.docuware.dev.schema._public.services.platform.*;
 import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -25,25 +19,18 @@ import com.sun.jersey.multipart.FormDataBodyPart;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.multipart.MultiPart;
 import com.sun.jersey.multipart.file.FileDataBodyPart;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.text.ParseException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java8.util.concurrent.CompletableFuture;
+import java8.util.function.Supplier;
+
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
 import javax.xml.namespace.QName;
+import java.io.*;
+import java.net.URI;
+import java.text.ParseException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -950,7 +937,7 @@ public class FileCabinetExtensionsBase {
         throw new RuntimeException("Chunk upload was not finished even entire file was uploaded.");
     }
 
-    private static <T extends IChunkable> CompletableFuture<DeserializedHttpResponseGen<T>> chunkUploadFileAsync(URI link, IRelationsWithProxy proxy, IFileUploadInfo file, int chunkSize, IStringContent stringContent, Class<T> expectedClass) {
+    private static <T extends IChunkable> CompletableFuture<DeserializedHttpResponseGen<T>> chunkUploadFileAsync(final URI link, final IRelationsWithProxy proxy, final IFileUploadInfo file, int chunkSize, final IStringContent stringContent, final Class<T> expectedClass) {
 
         if (chunkSize == 0) {
             chunkSize = EasyUploadDefaults.chunkSize;
@@ -958,6 +945,96 @@ public class FileCabinetExtensionsBase {
         final int cs = chunkSize;
 
         String contentType = file.getContentType();
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                URI l = link;
+                try {
+                    try (InputStream fs = file.createInputStream()) {
+                        int bytesRead;
+                        int length = fs.available();
+                        byte[] buffer = new byte[cs];
+                        boolean addDocumentMetaData = stringContent != null;
+
+                        int i = 0;
+                        while ((bytesRead = fs.read(buffer, 0, cs > fs.available() ? fs.available() : cs)) > 0) {
+                            i++;
+                            if (fs.available() < 1) {
+                                byte[] b = new byte[bytesRead];
+                                System.arraycopy(buffer, 0, b, 0, b.length);
+                                buffer = b;
+                            }
+                            try (ByteArrayInputStream streamContent = new ByteArrayInputStream(buffer)) {
+
+                                // In case there is document meta data attached, we create a multi-part body to send the index
+                                // data together with the first chunk.
+                                // In most cases (when the document is small) this causes only a single request.
+                                String rel = findRelFromLink(link, proxy.getLinks());
+                                T doc;
+                                ClientResponse resp;
+                                if (addDocumentMetaData) {
+                                    MultiPart mul;
+                                    FormDataMultiPart mult = new FormDataMultiPart();
+                                    BodyPart bp = new BodyPart(streamContent, MediaType.valueOf(file.getContentType()));
+                                    bp.getHeaders().add(HttpHeaders.CONTENT_TYPE, file.getContentType());
+                                    bp.setContentDisposition(new ContentDisposition("form-data; name=\"indexdata\"; fileName=\"" + file.getName() + "\";"));
+                                    mul = getMultipart(stringContent);
+                                    mul.bodyPart(bp);
+                                    // We do not send the document meta data with the next chunks.
+                                    addDocumentMetaData = false;
+                                    l = link.equals(l) ? LinkResolver.getLink(proxy.getProxy().getBaseAddress(), proxy.getLinks(), rel) : l;
+                                    WebResource web = proxy.getProxy().getHttpClient().getClient().resource(l);
+                                    resp = web.header("Content-Disposition", "inline; filename=\"" + file.getName() + "\";")
+                                            .header("X-File-Name", file.getName())
+                                            .header("X-File-Size", "" + length)
+                                            .header("X-File-ModifiedDate", file.getLastWriteTimeUtc().toString())
+                                            .header("Expect", "100-continue")
+                                            .type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, mul);
+                                    if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                                        HttpClientRequestException e = HttpClientRequestException.create(resp);
+                                        return new DeserializedHttpResponseGen<>(resp, e);}
+                                    doc = resp.getEntity(expectedClass);
+                                } else {
+
+                                    l = link.equals(l) ? LinkResolver.getLink(proxy.getProxy().getBaseAddress(), proxy.getLinks(), rel) : l;
+                                    WebResource web = proxy.getProxy().getHttpClient().getClient().resource(l);
+                                    resp = web//.header(HttpHeaders.COOKIE, ".DWPLATFORMAUTH=902EB067D55C421B0D2EA08A58BB9C49B67808A51DF57411AC8E92CA537794FE9FDC4AB2404601B14BF6141E27550C2D1D7146023DA0A638BF30F2AF2219291E8845A5CC3AD57D0F58A823DAD017B92FC23647F790BAFE99A3748D15EE8D829D6C5E383898EFDECA231DC9633FE36B70BEF100A858DDD428D3F699816F87DE020D971776BE4E635701F2788AE9AF30513D577B48E7B4CADB115FD05FE57AE3FDD47B8F6AE55717F0813864CB4BAEF7AA03DEF0201BB9F04392650008A94A620A9787B0A0CFCC967309A74C75472A00687AFC2DC1713A5200D8F0F2E9FE9229FE203CDDCC66C81890183F18F199DF4C9269877E44AC92CC0F7089F693172DCF9B2B85FA6D3E883D5BC495746F01F600F37DE697CF3AFCF6DD8C4297E157319923413FC9FD063212F0DD1291F5E94C1E2E28E2C1BC6931E3495D3EED1A50B3FC1948BD86A5386D2F5C89B142C22CEC62B486D200CCEB81161519937FB7F9D70C928922300C17915355CB2DDB667557762FD669716BAF996539D6B60D5110D87499654C46F66094F68B411F3B6EF31CCA94C29A8B11; DWPLATFORMBROWSERID=DD6D5AE890C4496E3178E4C8AB126750A7CEFC047E579B13E4C79182E794EEBD99AF696FD7C2DB9FDBB0E7354B163AC6441837779D1F65A31B9B765AE22B1F288C2166374EB8C6D99096AF59419ACCA3296C0F682917B6FA77653EB8A710F8F25C93D2E478A780147C4447811EA4E1F9587FF3926053398628AF7064FCC07A456E0794C086E788C0F1A3C540DB5451887D7551567B6E93C8766650A98694C9348AB4CB58606B990AD8A9EE40C6757F21820F7FDE; ARRAffinity=3f69d05b7482b58fab9ae7fcc49c89deb82bd7b72f50fe9f8cc15991525b8441")
+                                            .header(HttpHeaders.CONTENT_TYPE, file.getContentType())
+                                            .header("Content-Disposition", "inline; filename=\"" + file.getName() + "\";")
+                                            .header("X-File-Name", file.getName()).header("X-File-Size", "" + length)
+                                            .header("X-File-ModifiedDate", file.getLastWriteTimeUtc().toString())
+                                            .header(HttpHeaders.CONTENT_LENGTH, "" + buffer.length)
+                                            .header("Expect", "100-continue")
+                                            .post(ClientResponse.class, streamContent);
+                                    doc = resp.getEntity(expectedClass);
+                                    if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                                        HttpClientRequestException e = HttpClientRequestException.create(resp);
+                                        return new DeserializedHttpResponseGen<>(resp, e);}
+                                    resp.close();
+                                }
+                                if (doc instanceof IHttpClientProxy) {
+                                    ((IHttpClientProxy) doc).setProxy(proxy.getProxy());
+                                }
+                                if (doc.getFileChunk() == null || doc.getFileChunk().isFinished()) {
+                                    return new DeserializedHttpResponseGen<>(resp, doc);
+                                } else {
+                                    l = doc.getFileChunk().getNextRelationLink();
+                                }
+                            } catch (ParseException ex) {
+                                Logger.getLogger(FileCabinetExtensionsBase.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }
+                    }
+                } catch (IOException | IllegalArgumentException | UniformInterfaceException | ClientHandlerException e) {
+                    for (StackTraceElement s : e.getStackTrace()) {
+                        System.err.println(s);
+                    }
+                    throw new RuntimeException(e.fillInStackTrace());
+                }
+                throw new RuntimeException("Chunk upload was not finished even entire file was uploaded.");
+            }
+        });
+        /* Java 8 implementation
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             URI l = link;
             try {
@@ -1044,6 +1121,7 @@ public class FileCabinetExtensionsBase {
             }
             throw new RuntimeException("Chunk upload was not finished even entire file was uploaded.");
         });
+        */
     }
 
 }

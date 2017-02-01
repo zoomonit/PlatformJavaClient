@@ -6,12 +6,6 @@
 package com.docuware.dev.Extensions;
 
 import com.sun.jersey.api.client.ClientResponse;
-import java.io.IOException;
-import java.net.URI;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *

@@ -2,34 +2,15 @@
 
 package com.docuware.dev.schema._public.services.platform;
 
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.net.URI;
 import com.docuware.dev.Extensions.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.*;
 import com.docuware.dev.schema._public.services.Link;
-import com.docuware.dev.schema._public.services.platform.FileCabinets;
-import com.docuware.dev.schema._public.services.platform.Users;
-import com.docuware.dev.schema._public.services.platform.Roles;
-import com.docuware.dev.schema._public.services.platform.Groups;
-import com.docuware.dev.schema._public.services.platform.SelectListInfos;
-import com.docuware.dev.schema._public.services.platform.WebSettings;
-import javax.xml.bind.JAXBElement;
-import javax.xml.namespace.QName;
-import com.docuware.dev.schema._public.services.platform.Organization;
-import com.docuware.dev.schema._public.services.platform.TokenDescription;
-import com.docuware.dev.schema._public.services.platform.DialogInfos;
-import com.docuware.dev.schema._public.services.platform.RequestDialogQuery;
-import com.docuware.dev.schema._public.services.platform.UserInfo;
-import com.docuware.dev.schema._public.services.platform.User;
-import com.docuware.dev.schema._public.services.platform.NewUser;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
 import com.docuware.dev.schema._public.services.Links;
+import java8.util.concurrent.CompletableFuture;
+
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.annotation.*;
+import javax.xml.namespace.QName;
+import java.net.URI;
 
 
 @XmlAccessorType(XmlAccessType.FIELD)

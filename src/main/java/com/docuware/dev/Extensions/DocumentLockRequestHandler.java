@@ -7,7 +7,9 @@ package com.docuware.dev.Extensions;
 
 import com.docuware.dev.schema._public.services.platform.Document;
 import com.docuware.dev.schema._public.services.platform.LockInfo;
-import java.util.concurrent.CompletableFuture;
+import java8.util.concurrent.CompletableFuture;
+import java8.util.function.Function;
+
 
 /**
  *
@@ -25,14 +27,22 @@ public class DocumentLockRequestHandler implements IDocumentLockRequestHandler {
     }
 
     public CompletableFuture<String> sendLock(LockInfo lockInfo) {
-        return document.postToLockRelationForStringAsync(lockInfo).<String>thenApply(t -> {
-            return t.getContent();
+
+        return document.postToLockRelationForStringAsync(lockInfo).<String>thenApply(new Function<DeserializedHttpResponseGen<String>, String>() {
+            @Override
+            public String apply(DeserializedHttpResponseGen<String> stringDeserializedHttpResponseGen) {
+                return stringDeserializedHttpResponseGen.getContent();
+            }
         });
+
     }
 
     public CompletableFuture<String> deleteLock() {
-        return document.deleteLockRelationAsync().<String>thenApply(t -> {
-            return t.getContent();
+        return document.deleteLockRelationAsync().<String>thenApply(new Function<DeserializedHttpResponseGen<String>, String>() {
+            @Override
+            public String apply(DeserializedHttpResponseGen<String> stringDeserializedHttpResponseGen) {
+                return stringDeserializedHttpResponseGen.getContent();
+            }
         });
     }
 

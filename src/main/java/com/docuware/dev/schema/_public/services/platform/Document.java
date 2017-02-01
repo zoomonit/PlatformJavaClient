@@ -2,53 +2,23 @@
 
 package com.docuware.dev.schema._public.services.platform;
 
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.net.URI;
 import com.docuware.dev.Extensions.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.*;
-import com.docuware.dev.schema._public.services.Link;
-import java.util.function.Consumer;
-import com.sun.jersey.multipart.FormDataBodyPart;
-import com.docuware.dev.schema._public.services.platform.Document;
-import java.io.InputStream;
-import com.docuware.dev.schema._public.services.platform.DocumentsQueryResult;
-import com.docuware.dev.schema._public.services.platform.ContentDivideOperationInfo;
-import javax.xml.bind.JAXBElement;
-import javax.xml.namespace.QName;
-import com.docuware.dev.schema._public.services.platform.IntegerList;
-import com.docuware.dev.schema._public.services.platform.DocumentWordSearchResult;
-import com.docuware.dev.schema._public.services.platform.SearchPositionQuery;
-import com.docuware.dev.schema._public.services.platform.LockInfo;
-import com.docuware.dev.schema._public.services.platform.DocumentIndexFields;
-import com.docuware.dev.schema._public.services.platform.UpdateIndexFieldsInfo;
-import com.docuware.dev.schema._public.services.platform.SuggestionFields;
-import com.docuware.dev.schema._public.services.platform.Sections;
-import com.docuware.dev.schema._public.services.platform.Section;
-import com.docuware.dev.schema._public.services.platform.FileDownload;
-import com.docuware.dev.schema._public.services.platform.DocumentActionInfo;
-import com.docuware.dev.schema._public.services.platform.DocumentApplicationProperties;
-import com.docuware.dev.schema._public.services.platform.DocumentLinks;
-import com.docuware.dev.schema._public.services.platform.ResultListQuery;
-import com.docuware.dev.schema._public.services.platform.CheckOutResult;
-import com.docuware.dev.schema._public.services.platform.CheckOutToFileSystemInfo;
-import com.docuware.dev.schema._public.services.platform.ExportSettings;
-import com.docuware.dev.schema._public.services.platform.DocumentAnnotations;
-import com.docuware.dev.schema._public.services.platform.DocumentAnnotationsPlacement;
-
-import java.util.ArrayList;
-import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAnyElement;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlSchemaType;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
 import com.docuware.dev._public.intellix.DocumentContent;
+import com.docuware.dev.schema._public.services.Link;
 import com.docuware.dev.schema._public.services.Links;
-import org.w3c.dom.Element;
+import com.sun.jersey.multipart.FormDataBodyPart;
+import java8.util.concurrent.CompletableFuture;
+import java8.util.function.Consumer;
+
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import javax.xml.namespace.QName;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.GregorianCalendar;
+import java.util.List;
 
 
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -424,11 +394,11 @@ private boolean createdAtSpecified;//test
      *  Locks this instance and returns a DocumentLock object which can be used to unlock this document later.
      * 
      * @param operation A client identifier associated with lock operation
-     * @param lockIntervalInSeconds 
+     * @param lockIntervalSeconds
      * @return 
      */
     @Extension
-    public CompletableFuture<DocumentLock> lockAsync(String operation,int lockIntervalSeconds) {
+    public CompletableFuture<DocumentLock> lockAsync(String operation, int lockIntervalSeconds) {
 	return DocumentLockExtensions.lockAsync(this, operation, lockIntervalSeconds);
     }
 
@@ -451,11 +421,11 @@ private boolean createdAtSpecified;//test
      * 
      * @param onError   Action which is called on error
      * @param operation A client identifier associated with lock operation
-     * @param lockIntervalInSeconds 
+     * @param lockIntervalSeconds
      * @return 
      */
     @Extension
-    public CompletableFuture<DocumentLock> lockAsync(Consumer<Throwable> onError,String operation,int lockIntervalSeconds) {
+    public CompletableFuture<DocumentLock> lockAsync(Consumer<Throwable> onError, String operation, int lockIntervalSeconds) {
 	return DocumentLockExtensions.lockAsync(this, onError, operation, lockIntervalSeconds);
     }
 

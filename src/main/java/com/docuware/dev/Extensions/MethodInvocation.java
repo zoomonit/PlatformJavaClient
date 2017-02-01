@@ -1,11 +1,11 @@
 package com.docuware.dev.Extensions;
 
 import com.docuware.dev.schema._public.services.Links;
+import java8.util.concurrent.CompletableFuture;
+
+import javax.xml.bind.JAXBElement;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import javax.xml.bind.JAXBElement;
 
 /*
  * To change this license header, choose License Headers in Project Properties.

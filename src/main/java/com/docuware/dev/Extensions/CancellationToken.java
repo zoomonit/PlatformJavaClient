@@ -51,9 +51,10 @@ public class CancellationToken {
      */
     void cancel() {
         cancellationRequested = true;
-        fut.stream().forEach((f) -> {
-            f.cancel(true);
-        });
+        for (Future future : fut){
+            future.cancel(true);
+        }
+       ;
         try {
             this.finalize();
         } catch (Throwable ex) {

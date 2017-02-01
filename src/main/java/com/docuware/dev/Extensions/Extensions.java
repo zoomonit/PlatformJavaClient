@@ -6,16 +6,8 @@
 package com.docuware.dev.Extensions;
 
 import com.docuware.dev.schema._public.services.Link;
-import com.docuware.dev.schema._public.services.platform.AnnotationRectangle;
-import com.docuware.dev.schema._public.services.platform.DialogExpressionCondition;
-import com.docuware.dev.schema._public.services.platform.DialogInfo;
-import com.docuware.dev.schema._public.services.platform.Document;
-import com.docuware.dev.schema._public.services.platform.DocumentIndexField;
-import com.docuware.dev.schema._public.services.platform.DocumentIndexFieldKeywords;
-import com.docuware.dev.schema._public.services.platform.DocumentIndexFields;
-import com.docuware.dev.schema._public.services.platform.LineEntry;
-import com.docuware.dev.schema._public.services.platform.SortDirection;
-import com.docuware.dev.schema._public.services.platform.SortedField;
+import com.docuware.dev.schema._public.services.platform.*;
+
 import java.util.GregorianCalendar;
 import java.util.List;
 

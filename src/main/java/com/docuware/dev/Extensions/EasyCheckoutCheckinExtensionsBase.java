@@ -7,17 +7,19 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataBodyPart;
 import com.sun.jersey.multipart.MultiPart;
 import com.sun.jersey.multipart.file.FileDataBodyPart;
+import java8.util.concurrent.CompletableFuture;
+import java8.util.function.Supplier;
+
+import javax.ws.rs.core.MediaType;
+import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import javax.ws.rs.core.MediaType;
-import javax.xml.bind.JAXBElement;
-import javax.xml.namespace.QName;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -50,7 +52,29 @@ public class EasyCheckoutCheckinExtensionsBase {
      * @param docId The document identifier
      * @return  A Future producung an instance of EasyCheckoutResult
      */
-    public static CompletableFuture<EasyCheckoutResult> easyCheckOutToFileSystemAsync(ServiceConnection serviceConnection, String fileCabinetId, int docId) {
+    public static CompletableFuture<EasyCheckoutResult> easyCheckOutToFileSystemAsync(final ServiceConnection serviceConnection, final String fileCabinetId, final int docId) {
+
+        return CompletableFuture.<EasyCheckoutResult>supplyAsync(new Supplier<EasyCheckoutResult>() {
+            @Override
+            public EasyCheckoutResult get() {
+                DeserializedHttpResponseGen<InputStream> t;
+                try {
+                    t = serviceConnection.postToCheckoutForStreamAsync(docId, fileCabinetId, new CheckOutToFileSystemInfo()).get();
+                } catch (InterruptedException | ExecutionException x) {
+                    throw new RuntimeException(x.getMessage());
+                }
+
+                EasyCheckoutResult ecr = new EasyCheckoutResult();
+                String s = EasyCheckoutCheckinExtensionsBase.createEasyCheckoutFileName(t, fileCabinetId, docId);
+                ecr.setEncodedFileName(s);
+                ecr.setResponse(t);
+                return ecr;
+            }
+        });
+
+        /*
+        Java 8
+
         return CompletableFuture.<EasyCheckoutResult>supplyAsync(() -> {
             DeserializedHttpResponseGen<InputStream> t;
             try {
@@ -65,6 +89,7 @@ public class EasyCheckoutCheckinExtensionsBase {
             ecr.setResponse(t);
             return ecr;
         });
+        */
     }
 
         /// <summary>

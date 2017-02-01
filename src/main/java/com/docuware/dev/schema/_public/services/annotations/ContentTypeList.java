@@ -2,24 +2,14 @@
 
 package com.docuware.dev.schema._public.services.annotations;
 
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.net.URI;
-import com.docuware.dev.Extensions.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.*;
-import com.docuware.dev.schema._public.services.Link;
+import com.docuware.dev.Extensions.ObjectToXElementWrapperAdapter;
+import com.docuware.dev.Extensions.XElementWrapper;
 
+import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAnyElement;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElements;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.XmlValue;
-import javax.xml.namespace.QName;
 
 
 @XmlAccessorType(XmlAccessType.FIELD)

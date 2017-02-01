@@ -6,13 +6,14 @@
 package com.docuware.dev.Extensions;
 
 import com.sun.jersey.api.client.ClientResponse;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response.StatusType;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response.StatusType;
 
 /**
  *

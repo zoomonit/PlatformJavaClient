@@ -2,27 +2,18 @@
 
 package com.docuware.dev.schema._public.services.platform;
 
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.net.URI;
 import com.docuware.dev.Extensions.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.*;
 import com.docuware.dev.schema._public.services.Link;
-import com.docuware.dev.schema._public.services.platform.SelectListResult;
-import com.docuware.dev.schema._public.services.platform.SelectListExpression;
-import javax.xml.bind.JAXBElement;
-import javax.xml.namespace.QName;
-
-import java.util.ArrayList;
-import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlSchemaType;
-import javax.xml.bind.annotation.XmlType;
 import com.docuware.dev.schema._public.services.Links;
 import com.docuware.dev.settings.interop.DWFieldType;
+import java8.util.concurrent.CompletableFuture;
+
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.annotation.*;
+import javax.xml.namespace.QName;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @XmlAccessorType(XmlAccessType.FIELD)

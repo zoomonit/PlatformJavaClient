@@ -5,21 +5,15 @@
  */
 package com.docuware.dev.Extensions;
 
-import com.docuware.dev.schema._public.services.platform.DialogInfo;
-import com.docuware.dev.schema._public.services.platform.Document;
-import com.docuware.dev.schema._public.services.platform.DocumentIndexField;
-import com.docuware.dev.schema._public.services.platform.DocumentIndexFields;
-import com.docuware.dev.schema._public.services.platform.FileCabinet;
-import com.docuware.dev.schema._public.services.platform.ImportResult;
-import com.docuware.dev.schema._public.services.platform.ImportSettings;
-import com.docuware.dev.schema._public.services.platform.Section;
-import com.docuware.dev.schema._public.services.platform.SynchronizationSettings;
+import com.docuware.dev.schema._public.services.platform.*;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
-import java.io.InputStream;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java8.util.concurrent.CompletableFuture;
+import java8.util.function.Supplier;
+
 import javax.ws.rs.core.HttpHeaders;
+import java.io.InputStream;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -446,7 +440,30 @@ public class EasyFileUploadExtensionsBase {
         }
     }
 
-    private static CompletableFuture<DeserializedHttpResponseGen<Section>> EasyReplaceFileResultAsync(String link, HttpClientProxy httpClientProxy, Section section, IFileUploadInfo file) {
+    private static CompletableFuture<DeserializedHttpResponseGen<Section>> EasyReplaceFileResultAsync(final String link, final HttpClientProxy httpClientProxy, Section section, final IFileUploadInfo file) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<Section>>supplyAsync(new Supplier<DeserializedHttpResponseGen<Section>>() {
+            @Override
+            public DeserializedHttpResponseGen<Section> get() {
+                try (InputStream stream = file.createInputStream()) {
+                    WebResource web = httpClientProxy.getHttpClient().getClient().resource(GenerateFullUrl(link, httpClientProxy));
+                    ClientResponse resp = web
+                            .header(HttpHeaders.CONTENT_TYPE, file.getContentType())
+                            .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"; ModificationDate=\"" + file.getLastWriteTimeUtc().toString() + "\";")
+                            .post(ClientResponse.class, stream);
+                    if(resp.getStatus()<200||resp.getStatus()>399) {
+                        HttpClientRequestException e = HttpClientRequestException.create(resp);
+                        return new DeserializedHttpResponseGen(resp, e);
+                    }
+                    else {
+                        return new DeserializedHttpResponseGen<>(resp, resp.getEntity(Section.class));}
+                } catch (Exception e) {
+                    throw new RuntimeException(e.getMessage());
+                }
+            }
+        });
+
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<Section>>supplyAsync(() -> {
             try (InputStream stream = file.createInputStream()) {
                 WebResource web = httpClientProxy.getHttpClient().getClient().resource(GenerateFullUrl(link, httpClientProxy));
@@ -464,6 +481,7 @@ public class EasyFileUploadExtensionsBase {
                 throw new RuntimeException(e.getMessage());
             }
         });
+        */
     }
 
     private static String GenerateFullUrl(String link, HttpClientProxy httpClient) {

@@ -6,14 +6,14 @@
 package com.docuware.dev.Extensions;
 
 import com.docuware.dev.schema._public.services.platform.LockInfo;
+import java8.util.concurrent.CompletableFuture;
+import java8.util.function.*;
+
 import java.io.Closeable;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,8 +33,12 @@ public class DocumentLock implements Closeable {
     CompletableFuture<String> currentLockTask = null;
     CompletableFuture<String> closingTask = null;
     private IDocumentLockRequestHandler documentLockRequestHandler;
+
+    Consumer<Throwable> onError;
+    /*
     Consumer<Throwable> onError = (Throwable ex) -> {
     };
+    */
     ReentrantReadWriteLock isClosingLock = new ReentrantReadWriteLock();
 
     /**
@@ -159,10 +163,23 @@ public class DocumentLock implements Closeable {
      * @param documentLockRequestHandler
      * @return
      */
-    static CompletableFuture<DocumentLock> createAsync(String operation, Consumer<Throwable> onError, IDocumentLockRequestHandler documentLockRequestHandler) {
-        LockInfo li = new LockInfo();
+    static CompletableFuture<DocumentLock> createAsync(String operation, final Consumer<Throwable> onError, final IDocumentLockRequestHandler documentLockRequestHandler) {
+        final LockInfo li = new LockInfo();
         li.setInterval("" + documentLockRequestHandler.getLockInterval());
         li.setOperation(operation);
+
+        return documentLockRequestHandler.sendLock(li).thenApply(new Function<String, DocumentLock>() {
+            @Override
+            public DocumentLock apply(String content) {
+                if (content != null) {
+                    return new DocumentLock(li, onError, documentLockRequestHandler);
+                } else {
+                    throw new RuntimeException("Do not expect empty content when acquiring a lock.");
+                }
+
+            }
+        });
+        /*
         return documentLockRequestHandler.sendLock(li).thenApply(t -> {
             String content = t;
             if (content != null) {
@@ -171,12 +188,30 @@ public class DocumentLock implements Closeable {
                 throw new RuntimeException("Do not expect empty content when acquiring a lock.");
             }
         });
+        */
     }
 
     void acquireNewLock() {
         dropTimer();
 
         this.currentLockTask = documentLockRequestHandler.sendLock(lockInfo);
+        this.currentLockTask.whenComplete(new BiConsumer<String, Throwable>() {
+            @Override
+            public void accept(String s, Throwable throwable) {
+                currentLockTask = null;
+                if (throwable == null) {
+                    exception = null;
+                } else {
+                    setError(throwable);
+                }
+            }
+        }).thenRun(new Runnable() {
+            @Override
+            public void run() {
+                createTimer();
+            }
+        });
+        /*
         this.currentLockTask.whenComplete(
                 (s, x) -> {
                     this.currentLockTask = null;
@@ -187,6 +222,7 @@ public class DocumentLock implements Closeable {
                     }
                 })
                 .thenRun(() -> createTimer());
+                */
     }
 
     void setError(Throwable x) {
@@ -250,6 +286,31 @@ public class DocumentLock implements Closeable {
 
         // In case there is a pending lock task, we wait until the lock task is finished and continue with the unlock task.
         CompletableFuture<String> myClosingTask = this.currentLockTask != null
+                ? CompletableFuture.<String>supplyAsync(new Supplier<String>() {
+            @Override
+            public String get() {
+                try {
+                    currentLockTask.get();
+                    return documentLockRequestHandler.deleteLock().get();
+                } catch (Exception x) {
+                    throw new RuntimeException(x.getMessage());
+                }
+            }
+        }) : this.documentLockRequestHandler.deleteLock();
+
+        this.closingTask = myClosingTask.handle(new BiFunction<String, Throwable, String>() {
+            @Override
+            public String apply(String s, Throwable throwable) {
+                if (throwable != null) {
+                    exception = throwable;
+                } else {
+                    isClosed = true;
+                }
+                return s;
+            }
+        });
+        /*
+        CompletableFuture<String> myClosingTask = this.currentLockTask != null
                 ? CompletableFuture.<String>supplyAsync(() -> {
                     try {
                         currentLockTask.get();
@@ -269,6 +330,8 @@ public class DocumentLock implements Closeable {
                     }
                     return r;
                 });
+                */
+
     }
 
     /**

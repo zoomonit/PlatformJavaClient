@@ -6,8 +6,9 @@
 package com.docuware.dev.Extensions;
 
 import com.docuware.dev.schema._public.services.platform.Document;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
+import java8.util.concurrent.CompletableFuture;
+import java8.util.function.Consumer;
+
 
 /**
  *

@@ -15,9 +15,10 @@ public class UriPattern {
 
     public static String Resolve(String pattern, Map<String, Object> parameters) {
         UriTemplateResolver resolver = new UriTemplateResolver(pattern);
-        parameters.keySet().stream().forEach((p) -> {
-            resolver.SetParameter(p, parameters.get(p));
-        });
+
+        for (String key : parameters.keySet()){
+            resolver.SetParameter(key, parameters.get(key));
+        }
 
         return resolver.Resolve();
     }

@@ -1,11 +1,7 @@
 package com.docuware.dev.Extensions;
 
 import com.docuware.dev.schema._public.services.platform.ServiceDescription;
-import com.sun.jersey.api.client.AsyncWebResource;
-import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientRequest;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.*;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.filter.ClientFilter;
 import com.sun.jersey.client.apache.ApacheHttpClient;
@@ -13,18 +9,17 @@ import com.sun.jersey.client.apache.ApacheHttpClientHandler;
 import com.sun.jersey.client.apache.config.ApacheHttpClientConfig;
 import com.sun.jersey.client.apache.config.DefaultApacheHttpClientConfig;
 import com.sun.jersey.multipart.impl.MultiPartWriter;
-import java.io.File;
-import java.io.FileInputStream;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+
+import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.ws.rs.core.HttpHeaders;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 
 /**
  * This is one of the major classes working in the background of the client
@@ -156,7 +151,7 @@ class PlatformClient {
      * @param client    the Client, to which the Filter are added
      * @param UserAgents    the UserAgents, which are going to be added to the Header of each request
      */
-    private void prepareUserAgent(ApacheHttpClient client, String[] UserAgents) {
+    private void prepareUserAgent(ApacheHttpClient client, final String[] UserAgents) {
         ClientFilter cf = new ClientFilter() {
             @Override
             public ClientResponse handle(ClientRequest cr) throws ClientHandlerException {
@@ -177,7 +172,7 @@ class PlatformClient {
      * @param client   the Client, to which the Filter are added
      * @param AcceptLanguages    the AcceptLanguage, which are going to be added to the Header of each request
      */
-    private void prepareHttpClient(ApacheHttpClient client, String[] AcceptLanguages) {
+    private void prepareHttpClient(ApacheHttpClient client, final String[] AcceptLanguages) {
         ClientFilter cf = new ClientFilter() {
             @Override
             public ClientResponse handle(ClientRequest cr) throws ClientHandlerException {

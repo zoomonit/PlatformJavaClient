@@ -2,43 +2,16 @@
 
 package com.docuware.dev.schema._public.services.platform;
 
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.net.URI;
 import com.docuware.dev.Extensions.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.*;
 import com.docuware.dev.schema._public.services.Link;
-import com.docuware.dev.schema._public.services.platform.DocumentsQueryResult;
-import com.docuware.dev.schema._public.services.platform.Document;
-import javax.xml.bind.JAXBElement;
-import javax.xml.namespace.QName;
-import com.docuware.dev.schema._public.services.platform.DocumentsQueryTableResult;
-import com.docuware.dev.schema._public.services.platform.ContentMergeOperationInfo;
-import java.io.InputStream;
-import com.docuware.dev.schema._public.services.platform.ImportResult;
-import com.docuware.dev.schema._public.services.platform.ImportSettings;
-import com.docuware.dev.schema._public.services.platform.SynchronizationSettings;
-import com.docuware.dev.schema._public.services.platform.DialogInfos;
-import com.docuware.dev.schema._public.services.platform.Dialog;
-import com.docuware.dev.schema._public.services.platform.FileCabinet;
-import com.docuware.dev.schema._public.services.platform.Stamps;
-import com.docuware.dev.schema._public.services.platform.Notifications;
-import com.docuware.dev.schema._public.services.platform.FileCabinetTransferInfo;
-import com.docuware.dev.schema._public.services.platform.DocumentsTransferInfo;
-import com.docuware.dev.schema._public.services.platform.DialogInfo;
-import com.docuware.dev.schema._public.services.platform.BatchUpdateIndexFieldsResult;
-import com.docuware.dev.schema._public.services.platform.BatchUpdateProcess;
-import com.docuware.dev.schema._public.services.platform.FieldValueStatisticsResult;
-import com.docuware.dev.schema._public.services.platform.FieldValueStatisticsExpression;
-import com.docuware.dev.schema._public.services.platform.SequenceResult;
-import com.docuware.dev.schema._public.services.platform.SequenceRequest;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
 import com.docuware.dev.schema._public.services.Links;
+import java8.util.concurrent.CompletableFuture;
+
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.annotation.*;
+import javax.xml.namespace.QName;
+import java.io.InputStream;
+import java.net.URI;
 
 
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -367,7 +340,7 @@ private HttpClientProxy proxy;//test
 	* @return	 A CompletableFuture uploads the document and returns the uploaded document's metadata.
 	*/
     @Extension
-    public CompletableFuture<DeserializedHttpResponseGen<Document>> uploadDocumentAsync(Document document,java.io.File... file) {
+    public CompletableFuture<DeserializedHttpResponseGen<Document>> uploadDocumentAsync(Document document, java.io.File... file) {
 	return FileCabinetExtensionsBase.uploadDocumentAsync(this, document, FileWrapper.toFileInfoWrapper(file));
     }
 

@@ -5,14 +5,10 @@
  */
 package com.docuware.dev.Extensions;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Queue;
+import java.util.List;
 
 /**
  *
@@ -20,7 +16,7 @@ import java.util.Queue;
  */
 public class TarStream extends InputStream {
 
-    private final Queue<InputStream> streams;
+    private final LinkedList<ByteArrayInputStream> streams;
     private InputStream current;
     private long length;
 
@@ -30,7 +26,8 @@ public class TarStream extends InputStream {
          * The end of an archive is marked by at least two consecutive zero-filled records. The final block of an archive is padded out to full length with zeros.
          * See https://en.wikipedia.org/wiki/Tar_(computing) for details on file format.
          */
-        ArrayList<ByteArrayInputStream> streamList = new ArrayList<>();
+
+        List<ByteArrayInputStream> streamList = new ArrayList<>();
         for (IFileUploadInfo file : files) {
             ByteArrayOutputStream headerStream = new ByteArrayOutputStream();
             ByteArrayOutputStream padStream = new ByteArrayOutputStream();

@@ -10,19 +10,16 @@ import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.multipart.MultiPart;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java8.util.concurrent.CompletableFuture;
+import java8.util.function.Supplier;
+
 import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
+import java.io.InputStream;
+import java.net.URI;
 
 /**
- *
  * This is the main working class of the client. It resolves links and performs requests through the client
  */
 class LinkResolver {
@@ -39,9 +36,9 @@ class LinkResolver {
 
     /**
      * Gets the link specified through the Relation form the Links of an object
-     * 
-     * @param rel the relation to look for  
-     * @param baseUri   the baseUri
+     *
+     * @param rel     the relation to look for
+     * @param baseUri the baseUri
      * @param links   the links to look in for the relation
      */
     public static URI getLink(URI baseUri, Links links, String rel) {
@@ -54,10 +51,10 @@ class LinkResolver {
     }
 
     /**
-     *Gets the link specified through the Relation form the Links of an object
-     * 
-     * @param rel the relation to look for  
-     * @param links   the links to look in for the relation
+     * Gets the link specified through the Relation form the Links of an object
+     *
+     * @param rel   the relation to look for
+     * @param links the links to look in for the relation
      */
     public URI getLink(Links links, String rel) {
         return LinkResolver.getLink(baseUri, links, rel);
@@ -65,8 +62,9 @@ class LinkResolver {
 
     /**
      * Gets an absolute Uri from an relative Uri
-     * @param uri   the relative Uri
-     * @return  the absolute Uri
+     *
+     * @param uri the relative Uri
+     * @return the absolute Uri
      */
     public URI getAbsoluteUri(String uri) {
         return baseUri.resolve(uri);
@@ -88,17 +86,39 @@ class LinkResolver {
     
     Synchronous methods work like this, too, but they don't use CompletableFuture and DeserializedHttpResponses
     */
+
     /**
      * Send a get-Request asynchronously
-     * 
-     * @param <T>   The generic type of the Method
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expected return type
-     * @return  The future performing the getRequest and returning the Result
+     *
+     * @param <T>          The generic type of the Method
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expected return type
+     * @return The future performing the getRequest and returning the Result
      */
-    <T> CompletableFuture<DeserializedHttpResponseGen<T>> getAsync(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType) {
+    <T> CompletableFuture<DeserializedHttpResponseGen<T>> getAsync(final IHttpClientProxy proxy, final Links links, final String rel, final Class<T> expectedType) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                ClientResponse resp = web.get(ClientResponse.class);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen<>(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen(resp, t);
+                }
+            }
+        });
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.get(ClientResponse.class);
@@ -114,17 +134,18 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen(resp, t);
             }
         });
+        */
     }
 
     /**
      * Send a get-Request
-     * 
-     * @param <T>   The generic type of the Method
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expected return type
-     * @return  The future performing the getRequest and returning the Result
+     *
+     * @param <T>          The generic type of the Method
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expected return type
+     * @return The future performing the getRequest and returning the Result
      */
     <T> T get(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType) {
         WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
@@ -133,7 +154,7 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             T t = resp.getEntity(expectedType);
             if (t instanceof IHttpClientProxy) {
                 ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -141,20 +162,20 @@ class LinkResolver {
             return t;
         }
     }
-    
+
     /**
-     * Send a post-Request 
-     * 
-     * @param <P>   The generic type of the post-object
-     * @param <T>   The generic type of the Method
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expected return type
-     * @param postData  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
-     * @return  The future performing the post-Request and returning the Result
+     * Send a post-Request
+     *
+     * @param <P>          The generic type of the post-object
+     * @param <T>          The generic type of the Method
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expected return type
+     * @param postData     data to post to the Client
+     * @param type         type-field of the header (specifies, what is send)
+     * @param accept       accept-field of the header (specified, what request is accepted)
+     * @return The future performing the post-Request and returning the Result
      */
     <T, P> T post(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, JAXBElement<P> postData, String type, String accept) {
         ClientResponse resp = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel)).type(type).accept(accept).post(ClientResponse.class, postData);
@@ -162,7 +183,7 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             T t = resp.getEntity(expectedType);
             if (t instanceof IHttpClientProxy) {
                 ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -173,19 +194,40 @@ class LinkResolver {
 
     /**
      * Send a post-Request asynchronously
-     * 
-     * @param <P>   The generic type of the post-object
-     * @param <T>   The generic return type of the Method
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expected return type
-     * @param postData  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
-     * @return  The future performing the post-Request and returning the Result
+     *
+     * @param <P>          The generic type of the post-object
+     * @param <T>          The generic return type of the Method
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expected return type
+     * @param postData     data to post to the Client
+     * @param type         type-field of the header (specifies, what is send)
+     * @param accept       accept-field of the header (specified, what request is accepted)
+     * @return The future performing the post-Request and returning the Result
      */
-    <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> postAsync(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, JAXBElement<P> postData, String type, String accept) {
+    <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> postAsync(final IHttpClientProxy proxy, final Links links, final String rel, final Class<T> expectedType, final JAXBElement<P> postData, final String type, final String accept) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                ClientResponse resp = web.type(type).accept(accept).post(ClientResponse.class, postData);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen<>(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen(resp, t);
+                }
+            }
+        });
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.type(type).accept(accept).post(ClientResponse.class, postData);
@@ -201,19 +243,20 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen(resp, t);
             }
         });
+        */
     }
 
     /**
-     * Send a post-Request 
-     * 
-     * @param <P>   The generic type of the post-object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param postData  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
-     * @return  The future performing the post-Request and returning the Result
+     * Send a post-Request
+     *
+     * @param <P>      The generic type of the post-object
+     * @param proxy    The proxy which is used for communication
+     * @param links    The linkns of the object
+     * @param rel      The relation which should be picked from the links
+     * @param postData data to post to the Client
+     * @param type     type-field of the header (specifies, what is send)
+     * @param accept   accept-field of the header (specified, what request is accepted)
+     * @return The future performing the post-Request and returning the Result
      */
     <P> String post(IHttpClientProxy proxy, Links links, String rel, P postData, String type, String accept) {
         ClientResponse resp = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel)).type(type).accept(accept).post(ClientResponse.class, postData);
@@ -221,45 +264,60 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             return resp.getEntity(String.class);
         }
     }
 
     /**
      * Send a post-Request asynchronously
-     * 
-     * @param <P>   The generic type of the post-object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param postData  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
-     * @return  The future performing the post-Request and returning the Result
+     *
+     * @param <P>      The generic type of the post-object
+     * @param proxy    The proxy which is used for communication
+     * @param links    The linkns of the object
+     * @param rel      The relation which should be picked from the links
+     * @param postData data to post to the Client
+     * @param type     type-field of the header (specifies, what is send)
+     * @param accept   accept-field of the header (specified, what request is accepted)
+     * @return The future performing the post-Request and returning the Result
      */
-    <P> CompletableFuture<DeserializedHttpResponseGen<String>> postAsync(IHttpClientProxy proxy, Links links, String rel, P postData, String type, String accept) {
+    <P> CompletableFuture<DeserializedHttpResponseGen<String>> postAsync(final IHttpClientProxy proxy, final Links links, final String rel, final P postData, final String type, final String accept) {
+
+        return CompletableFuture.supplyAsync(
+                new Supplier<DeserializedHttpResponseGen<String>>() {
+                    @Override
+                    public DeserializedHttpResponseGen<String> get() {
+                        WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                        ClientResponse resp = web.type(type).accept(accept).post(ClientResponse.class, postData);
+                        if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                        return new DeserializedHttpResponseGen(resp, resp.getEntity(String.class));
+                    }
+                }
+        );
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<String>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.type(type).accept(accept).post(ClientResponse.class, postData);
             if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
             return new DeserializedHttpResponseGen(resp, resp.getEntity(String.class));
         });
+        */
     }
 
     /**
-     * Send a post-Request 
-     * 
-     * @param <T> The generic type fo the return object
-     * @param <P>   The generic type of the post-object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
-     * @param bodyContentType  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
-     * @return  The response object of the post-request
+     * Send a post-Request
+     *
+     * @param <T>             The generic type fo the return object
+     * @param <P>             The generic type of the post-object
+     * @param proxy           The proxy which is used for communication
+     * @param links           The linkns of the object
+     * @param rel             The relation which should be picked from the links
+     * @param expectedType    The expecetd return type
+     * @param postData        data to post to the Client
+     * @param bodyContentType type-field of the header (specifies, what is send)
+     * @param accept          accept-field of the header (specified, what request is accepted)
+     * @return The response object of the post-request
      */
     <T, P> T post(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, P postData, String bodyContentType, String accept) {
         WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
@@ -268,7 +326,7 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             T t = resp.getEntity(expectedType);
             if (t instanceof IHttpClientProxy) {
                 ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -279,14 +337,14 @@ class LinkResolver {
 
     /**
      * Send a post-Request for Multipart-Content
-     * 
-     * @param <T> The generic type fo the return object
-     * @param <P>   The generic type of the post-object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
+     *
+     * @param <T>          The generic type fo the return object
+     * @param <P>          The generic type of the post-object
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param postData     data to post to the Client
      * @return The response object of the post-request
      */
     <T, P> T postMultipart(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, P postData) {
@@ -295,7 +353,7 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             T t = resp.getEntity(expectedType);
             if (t instanceof IHttpClientProxy) {
                 ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -306,19 +364,40 @@ class LinkResolver {
 
     /**
      * Send a post-Request asynchronously
-     * 
-     * @param <T> The generic type fo the return object
-     * @param <P>   The generic type of the post-object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
-     * @param bodyContentType  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
-     * @return  A future that performs the request
+     *
+     * @param <T>             The generic type fo the return object
+     * @param <P>             The generic type of the post-object
+     * @param proxy           The proxy which is used for communication
+     * @param links           The linkns of the object
+     * @param rel             The relation which should be picked from the links
+     * @param expectedType    The expecetd return type
+     * @param postData        data to post to the Client
+     * @param bodyContentType type-field of the header (specifies, what is send)
+     * @param accept          accept-field of the header (specified, what request is accepted)
+     * @return A future that performs the request
      */
-    <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> postAsync(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, P postData, String bodyContentType, String accept) {
+    <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> postAsync(final IHttpClientProxy proxy, final Links links, final String rel, final Class<T> expectedType, final P postData, final String bodyContentType, final String accept) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                ClientResponse resp = web.type(bodyContentType).accept(accept).post(ClientResponse.class, postData);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen<>(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen(resp, t);
+                }
+            }
+        });
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.type(bodyContentType).accept(accept).post(ClientResponse.class, postData);
@@ -326,7 +405,7 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen<>(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -334,21 +413,43 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen(resp, t);
             }
         });
+        */
     }
 
-     /**
+    /**
      * Send a post-Request for Multipart-Content asynchronously
-     * 
-     * @param <T> The generic type fo the return object
-     * @param <P>   The generic type of the post-object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
-     * @return  A future that performs the request
+     *
+     * @param <T>          The generic type fo the return object
+     * @param <P>          The generic type of the post-object
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param postData     data to post to the Client
+     * @return A future that performs the request
      */
-    <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> postMultipartAsync(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, P postData) {
+    <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> postMultipartAsync(final IHttpClientProxy proxy, final Links links, final String rel, final Class<T> expectedType, final P postData) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                ClientResponse resp = web.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, postData);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen<>(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen(resp, t);
+                }
+            }
+        });
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, postData);
@@ -356,7 +457,7 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen<>(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -364,19 +465,20 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen(resp, t);
             }
         });
+        */
 
     }
 
     /**
      * Send a post-Request
-     * 
-     * @param <T>   The generic type fo the return object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
-     * @return  The response object of the post-request
+     *
+     * @param <T>          The generic type fo the return object
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param postData     data to post to the Client
+     * @return The response object of the post-request
      */
     <T> T post(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, InputStream postData) {
         ClientResponse resp = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel)).post(ClientResponse.class, postData);
@@ -384,7 +486,7 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             T t = resp.getEntity(expectedType);
             if (t instanceof IHttpClientProxy) {
                 ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -395,16 +497,38 @@ class LinkResolver {
 
     /**
      * Send a post-Request asynchronously
-     * 
-     * @param <T>   The generic type fo the return object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
-     * @return  A future performing the request
+     *
+     * @param <T>          The generic type fo the return object
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param postData     data to post to the Client
+     * @return A future performing the request
      */
-    <T> CompletableFuture<DeserializedHttpResponseGen<T>> postAsync(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, InputStream postData) {
+    <T> CompletableFuture<DeserializedHttpResponseGen<T>> postAsync(final IHttpClientProxy proxy, final Links links, final String rel, final Class<T> expectedType, final InputStream postData) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                ClientResponse resp = web.post(ClientResponse.class, postData);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen<>(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen(resp, t);
+                }
+            }
+        });
+
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.post(ClientResponse.class, postData);
@@ -412,7 +536,7 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen<>(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -420,20 +544,21 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen(resp, t);
             }
         });
+        */
     }
 
     /**
      * Send a put-Request
-     * 
-     * @param <T>   The generic return type
-     * @param <P>   The generic type of the put-object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
+     *
+     * @param <T>          The generic return type
+     * @param <P>          The generic type of the put-object
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param postData     data to post to the Client
+     * @param type         type-field of the header (specifies, what is send)
+     * @param accept       accept-field of the header (specified, what request is accepted)
      * @return The response object of the put-request
      */
     <T, P> T put(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, JAXBElement<P> postData, String type, String accept) {
@@ -442,7 +567,7 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             T t = resp.getEntity(expectedType);
             if (t instanceof IHttpClientProxy) {
                 ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -453,19 +578,40 @@ class LinkResolver {
 
     /**
      * Send a put-Request asynchronously
-     * 
-     * @param <T>   The generic return type
-     * @param <P>   The generic type of the put-object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
+     *
+     * @param <T>          The generic return type
+     * @param <P>          The generic type of the put-object
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param postData     data to post to the Client
+     * @param type         type-field of the header (specifies, what is send)
+     * @param accept       accept-field of the header (specified, what request is accepted)
      * @return A future performing the put-Request
      */
-    <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> putAsync(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, JAXBElement<P> postData, String type, String accept) {
+    <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> putAsync(final IHttpClientProxy proxy, final Links links, final String rel, final Class<T> expectedType, final JAXBElement<P> postData, final String type, final String accept) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                ClientResponse resp = web.type(type).accept(accept).put(ClientResponse.class, postData);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen<>(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen(resp, t);
+                }
+            }
+        });
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.type(type).accept(accept).put(ClientResponse.class, postData);
@@ -473,7 +619,7 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen<>(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -481,18 +627,19 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen(resp, t);
             }
         });
+        */
 
     }
 
     /**
      * Send a put-Request
-     * 
-     * @param <T>   The generic return type
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param accept    accept-field of the header (specified, what request is accepted)
+     *
+     * @param <T>          The generic return type
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param accept       accept-field of the header (specified, what request is accepted)
      * @return The response object of the put-Request
      */
     <T> T put(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, String accept) {
@@ -501,7 +648,7 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             T t = resp.getEntity(expectedType);
             if (t instanceof IHttpClientProxy) {
                 ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -512,16 +659,38 @@ class LinkResolver {
 
     /**
      * Send a put-Request asynchronously
-     * 
-     * @param <T>   The generic return type
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param accept    accept-field of the header (specified, what request is accepted)
+     *
+     * @param <T>          The generic return type
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param accept       accept-field of the header (specified, what request is accepted)
      * @return A future performing the put-Request
      */
-    <T> CompletableFuture<DeserializedHttpResponseGen<T>> putAsync(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, String accept) {
+    <T> CompletableFuture<DeserializedHttpResponseGen<T>> putAsync(final IHttpClientProxy proxy, final Links links, final String rel, final Class<T> expectedType, final String accept) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                ClientResponse resp = web.accept(accept).put(ClientResponse.class);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen<>(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen(resp, t);
+                }
+            }
+        });
+
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.accept(accept).put(ClientResponse.class);
@@ -529,26 +698,26 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen<>(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
                 }
                 return new DeserializedHttpResponseGen(resp, t);
             }
-        });
+        });*/
     }
 
     /**
      * Send a put-Reqeust
-     * 
-     * @param <P>   The generic type of the object to put
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param postData  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
+     *
+     * @param <P>      The generic type of the object to put
+     * @param proxy    The proxy which is used for communication
+     * @param links    The linkns of the object
+     * @param rel      The relation which should be picked from the links
+     * @param postData data to post to the Client
+     * @param type     type-field of the header (specifies, what is send)
+     * @param accept   accept-field of the header (specified, what request is accepted)
      * @return a String representing the response to the put-request
      */
     <P> String put(IHttpClientProxy proxy, Links links, String rel, P postData, String type, String accept) {
@@ -557,24 +726,43 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             return resp.getEntity(String.class);
         }
     }
 
     /**
      * Send a put-Reqeust asynchronously
-     * 
-     * @param <P>   The generic type of the object to put
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param postData  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
+     *
+     * @param <P>      The generic type of the object to put
+     * @param proxy    The proxy which is used for communication
+     * @param links    The linkns of the object
+     * @param rel      The relation which should be picked from the links
+     * @param postData data to post to the Client
+     * @param type     type-field of the header (specifies, what is send)
+     * @param accept   accept-field of the header (specified, what request is accepted)
      * @return A future performing the put request
      */
-    <P> CompletableFuture<DeserializedHttpResponseGen<String>> putAsync(IHttpClientProxy proxy, Links links, String rel, P postData, String type, String accept) {
+    <P> CompletableFuture<DeserializedHttpResponseGen<String>> putAsync(final IHttpClientProxy proxy, final Links links, final String rel, final P postData, final String type, final String accept) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<String>>supplyAsync(
+                new Supplier<DeserializedHttpResponseGen<String>>() {
+                    @Override
+                    public DeserializedHttpResponseGen<String> get() {
+                        WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                        ClientResponse resp = web.type(type).accept(accept).put(ClientResponse.class, postData);
+                        if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                            HttpClientRequestException e = HttpClientRequestException.create(resp);
+                            return new DeserializedHttpResponseGen(resp, e);
+                        } else {
+                            if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                            return new DeserializedHttpResponseGen(resp, resp.getEntity(String.class));
+                        }
+                    }
+                }
+        );
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<String>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.type(type).accept(accept).put(ClientResponse.class, postData);
@@ -582,24 +770,25 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 return new DeserializedHttpResponseGen(resp, resp.getEntity(String.class));
             }
         });
+        */
     }
 
     /**
      * Send a put-Request
-     * 
-     * @param <T>   The generic return type
-     * @param <P>   The generic type of the put-object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
+     *
+     * @param <T>          The generic return type
+     * @param <P>          The generic type of the put-object
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param postData     data to post to the Client
+     * @param type         type-field of the header (specifies, what is send)
+     * @param accept       accept-field of the header (specified, what request is accepted)
      * @return The response object of the put request
      */
     <T, P> T put(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, P postData, String type, String accept) {
@@ -608,7 +797,7 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             T t = resp.getEntity(expectedType);
             if (t instanceof IHttpClientProxy) {
                 ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -617,21 +806,42 @@ class LinkResolver {
         }
     }
 
-     /**
+    /**
      * Send a put-Request asynchronously
-     * 
-     * @param <T>   The generic return type
-     * @param <P>   The generic type of the put-object
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
+     *
+     * @param <T>          The generic return type
+     * @param <P>          The generic type of the put-object
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param postData     data to post to the Client
+     * @param bodyContentType         type-field of the header (specifies, what is send)
+     * @param accept       accept-field of the header (specified, what request is accepted)
      * @return A future performing the put-Request
      */
-    <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> putAsync(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, P postData, String bodyContentType, String accept) {
+    <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> putAsync(final IHttpClientProxy proxy, final Links links, final String rel, final Class<T> expectedType, final P postData, final String bodyContentType, final String accept) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                ClientResponse resp = web.type(bodyContentType).accept(accept).put(ClientResponse.class, postData);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen<>(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen(resp, t);
+                }
+            }
+        });
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.type(bodyContentType).accept(accept).put(ClientResponse.class, postData);
@@ -639,7 +849,7 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen<>(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -647,18 +857,19 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen(resp, t);
             }
         });
+        */
     }
 
     /**
      * Send a put-Request
-     * 
-     * @param <T>   The generic return type
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
-     * @return  The response object of the put request
+     *
+     * @param <T>          The generic return type
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param postData     data to post to the Client
+     * @return The response object of the put request
      */
     <T> T put(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, InputStream postData) {
         ClientResponse resp = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel)).put(ClientResponse.class, postData);
@@ -666,7 +877,7 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             T t = resp.getEntity(expectedType);
             if (t instanceof IHttpClientProxy) {
                 ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -677,16 +888,38 @@ class LinkResolver {
 
     /**
      * Send a put-Request asynchronously
-     * 
-     * @param <T>   The generic return type
-     * @param proxy The proxy which is used for communication
-     * @param links The linkns of the object
-     * @param rel   The relation which should be picked from the links
-     * @param expectedType  The expecetd return type
-     * @param postData  data to post to the Client
-     * @return  A future performing the put request
+     *
+     * @param <T>          The generic return type
+     * @param proxy        The proxy which is used for communication
+     * @param links        The linkns of the object
+     * @param rel          The relation which should be picked from the links
+     * @param expectedType The expecetd return type
+     * @param postData     data to post to the Client
+     * @return A future performing the put request
      */
-    <T> CompletableFuture<DeserializedHttpResponseGen<T>> putAsync(IHttpClientProxy proxy, Links links, String rel, Class<T> expectedType, InputStream postData) {
+    <T> CompletableFuture<DeserializedHttpResponseGen<T>> putAsync(final IHttpClientProxy proxy, final Links links, final String rel, final Class<T> expectedType, final InputStream postData) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                ClientResponse resp = web.put(ClientResponse.class, postData);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen<>(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen(resp, t);
+                }
+            }
+        });
+
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.put(ClientResponse.class, postData);
@@ -694,7 +927,7 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen<>(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -702,14 +935,15 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen(resp, t);
             }
         });
+        */
     }
 
     
     /*Delete-Methods are not generic as it is not required until now. */
-    
+
     /**
      * Send a delete-Request
-     * 
+     *
      * @param proxy The proxy which is used for communication
      * @param links The linkns of the object
      * @param rel   The relation which should be picked from the links
@@ -721,20 +955,37 @@ class LinkResolver {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;
         } else {
-            if(resp.getStatus()==204) return null;
+            if (resp.getStatus() == 204) return null;
             return resp.getEntity(String.class);
         }
     }
 
     /**
      * Send a delete-Request
-     * 
+     *
      * @param proxy The proxy which is used for communication
      * @param links The linkns of the object
      * @param rel   The relation which should be picked from the links
      * @return A future performing the delete-request
      */
-    CompletableFuture<DeserializedHttpResponseGen<String>> deleteAsync(IHttpClientProxy proxy, Links links, String rel) {
+    CompletableFuture<DeserializedHttpResponseGen<String>> deleteAsync(final IHttpClientProxy proxy, final Links links, final String rel) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<String>>supplyAsync(new Supplier<DeserializedHttpResponseGen<String>>() {
+            @Override
+            public DeserializedHttpResponseGen<String> get() {
+                WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
+                ClientResponse resp = web.delete(ClientResponse.class);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    return new DeserializedHttpResponseGen(resp, resp.getEntity(String.class));
+                }
+            }
+        });
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<String>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel));
             ClientResponse resp = web.delete(ClientResponse.class);
@@ -742,31 +993,56 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 return new DeserializedHttpResponseGen(resp, resp.getEntity(String.class));
             }
         });
+        */
     }
 
     /*The methods from here downwards work slightly differnt then the rest, as they do not need do resolve a uri from links
     with a rel. Instead these methods get the uri as input parameter. This methods are used in the extension methods of the
     service connection*/
+
     /**
      * Send a post-Request asynchronously
-     * 
-     * @param <T>   The generic return type
-     * @param <P>   The generic type of the put-object
-     * @param proxy The proxy which is used for communication
-     * @param expectedType  The expecetd return type
-     * @param data  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
-     * @param uri   The uri on which to perform the request
-     * @param inputType the type of the input Object as Class-Represenatation
-     * @param inputTypeString   the type of the input Object as String-Represenatation
+     *
+     * @param <T>             The generic return type
+     * @param <P>             The generic type of the put-object
+     * @param proxy           The proxy which is used for communication
+     * @param expectedType    The expecetd return type
+     * @param data            data to post to the Client
+     * @param type            type-field of the header (specifies, what is send)
+     * @param accept          accept-field of the header (specified, what request is accepted)
+     * @param uri             The uri on which to perform the request
+     * @param inputType       the type of the input Object as Class-Represenatation
+     * @param inputTypeString the type of the input Object as String-Represenatation
      * @return A future performing the post request
      */
-    static <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> postAsync(IHttpClientProxy proxy, URI uri, String type, String accept, Class<T> expectedType, Class<P> inputType, String inputTypeString, P data) {
+    static <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> postAsync(final IHttpClientProxy proxy, final URI uri, final String type, final String accept, final Class<T> expectedType, final Class<P> inputType, final String inputTypeString, final P data) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().resource(uri);
+                JAXBElement jax = new JAXBElement(new QName("http://dev.docuware.com/schema/public/services/platform", inputTypeString), inputType, null, data);
+                ClientResponse resp = web.type(type).accept(accept).post(ClientResponse.class, jax);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen<>(resp, t);
+                }
+            }
+        });
+
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().resource(uri);
             JAXBElement jax = new JAXBElement(new QName("http://dev.docuware.com/schema/public/services/platform", inputTypeString), inputType, null, data);
@@ -775,7 +1051,7 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -783,22 +1059,43 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen<>(resp, t);
             }
         });
+        */
     }
 
-     /**
+    /**
      * Send a post-Request asynchronously
-     * 
-     * @param <T>   The generic return type
-     * @param <P>   The generic type of the put-object
-     * @param proxy The proxy which is used for communication
-     * @param expectedType  The expecetd return type
-     * @param data  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
-     * @param uri   The uri on which to perform the request
+     *
+     * @param <T>          The generic return type
+     * @param proxy        The proxy which is used for communication
+     * @param expectedType The expecetd return type
+     * @param data         data to post to the Client
+     * @param type         type-field of the header (specifies, what is send)
+     * @param accept       accept-field of the header (specified, what request is accepted)
+     * @param uri          The uri on which to perform the request
      * @return A future performing the post request
      */
-    static <T> CompletableFuture<DeserializedHttpResponseGen<T>> postAsync(IHttpClientProxy proxy, URI uri, String type, String accept, Class<T> expectedType, InputStream data) {
+    static <T> CompletableFuture<DeserializedHttpResponseGen<T>> postAsync(final IHttpClientProxy proxy, final URI uri, final String type, final String accept, final Class<T> expectedType, final InputStream data) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().resource(uri);
+                ClientResponse resp = web.type(type).accept(accept).post(ClientResponse.class, data);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen<>(resp, t);
+                }
+            }
+        });
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().resource(uri);
             ClientResponse resp = web.type(type).accept(accept).post(ClientResponse.class, data);
@@ -806,7 +1103,7 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -814,20 +1111,43 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen<>(resp, t);
             }
         });
+        */
     }
 
     /**
      * Send a post-Request for Multipart-Content asynchronously
-     * 
-     * @param <T>   The generic return type
-     * @param proxy The proxy which is used for communication
-     * @param expectedType  The expecetd return type
-     * @param data  data to post to the Client
-     * @param accept    accept-field of the header (specified, what request is accepted)
-     * @param uri   The uri on which to perform the request
-     * @return 
+     *
+     * @param <T>          The generic return type
+     * @param proxy        The proxy which is used for communication
+     * @param expectedType The expecetd return type
+     * @param data         data to post to the Client
+     * @param accept       accept-field of the header (specified, what request is accepted)
+     * @param uri          The uri on which to perform the request
+     * @return
      */
-    static <T> CompletableFuture<DeserializedHttpResponseGen<T>> postMultiPartAsync(IHttpClientProxy proxy, URI uri, String accept, Class<T> expectedType, MultiPart data) {
+    static <T> CompletableFuture<DeserializedHttpResponseGen<T>> postMultiPartAsync(final IHttpClientProxy proxy, final URI uri, final String accept, final Class<T> expectedType, final MultiPart data) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().resource(uri);
+                ClientResponse resp = web.type(MediaType.MULTIPART_FORM_DATA).accept(accept).post(ClientResponse.class, data);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen<>(resp, t);
+                }
+            }
+        });
+
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().resource(uri);
             ClientResponse resp = web.type(MediaType.MULTIPART_FORM_DATA).accept(accept).post(ClientResponse.class, data);
@@ -835,7 +1155,7 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -843,24 +1163,47 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen<>(resp, t);
             }
         });
+        */
     }
 
     /**
      * Send a put-Request asynchronously
-     * 
-     * @param <T>   The generic return type
-     * @param <P>   The generic type of the put-object
-     * @param proxy The proxy which is used for communication
-     * @param expectedType  The expecetd return type
-     * @param data  data to post to the Client
-     * @param type  type-field of the header (specifies, what is send)
-     * @param accept    accept-field of the header (specified, what request is accepted)
-     * @param uri   The uri on which to perform the request
-     * @param inputType the type of the input Object as Class-Represenatation
-     * @param inputTypeString   the type of the input Object as String-Represenatation
+     *
+     * @param <T>             The generic return type
+     * @param <P>             The generic type of the put-object
+     * @param proxy           The proxy which is used for communication
+     * @param expectedType    The expecetd return type
+     * @param data            data to post to the Client
+     * @param type            type-field of the header (specifies, what is send)
+     * @param accept          accept-field of the header (specified, what request is accepted)
+     * @param uri             The uri on which to perform the request
+     * @param inputType       the type of the input Object as Class-Represenatation
+     * @param inputTypeString the type of the input Object as String-Represenatation
      * @return A future performing the put-Request
      */
-    static <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> putAsync(IHttpClientProxy proxy, URI uri, String type, String accept, Class<T> expectedType, Class<P> inputType, String inputTypeString, P data) {
+    static <T, P> CompletableFuture<DeserializedHttpResponseGen<T>> putAsync(final IHttpClientProxy proxy, final URI uri, final String type, final String accept, final Class<T> expectedType, final Class<P> inputType, final String inputTypeString, final P data) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().resource(uri);
+                JAXBElement jax = new JAXBElement(new QName("http://dev.docuware.com/schema/public/services/platform", inputTypeString), inputType, null, data);
+                ClientResponse resp = web.type(type).accept(accept).put(ClientResponse.class, jax);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen<>(resp, t);
+                }
+            }
+        });
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().resource(uri);
             JAXBElement jax = new JAXBElement(new QName("http://dev.docuware.com/schema/public/services/platform", inputTypeString), inputType, null, data);
@@ -869,7 +1212,7 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -877,19 +1220,42 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen<>(resp, t);
             }
         });
+        */
     }
 
     /**
      * Send a get-Request asynchronously
-     * 
-     * @param <T>   The generic return type
-     * @param proxy The proxy which is used for communication
-     * @param uri   The uri on which to perform the request
-     * @param accept    accept-field of the header (specified, what request is accepted)
-     * @param expectedType  The expecetd return type
+     *
+     * @param <T>          The generic return type
+     * @param proxy        The proxy which is used for communication
+     * @param uri          The uri on which to perform the request
+     * @param accept       accept-field of the header (specified, what request is accepted)
+     * @param expectedType The expecetd return type
      * @return A future performing the get-Request
      */
-    static <T> CompletableFuture<DeserializedHttpResponseGen<T>> getAsync(IHttpClientProxy proxy, URI uri, String accept, Class<T> expectedType) {
+    static <T> CompletableFuture<DeserializedHttpResponseGen<T>> getAsync(final IHttpClientProxy proxy, final URI uri, final String accept, final Class<T> expectedType) {
+
+        return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(new Supplier<DeserializedHttpResponseGen<T>>() {
+            @Override
+            public DeserializedHttpResponseGen<T> get() {
+                WebResource web = proxy.getProxy().getHttpClient().resource(uri);
+                ClientResponse resp = web.accept(accept).get(ClientResponse.class);
+                if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+                    HttpClientRequestException e = HttpClientRequestException.create(resp);
+                    return new DeserializedHttpResponseGen(resp, e);
+                } else {
+                    if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+                    T t = resp.getEntity(expectedType);
+                    if (t instanceof IHttpClientProxy) {
+                        ((IHttpClientProxy) t).setProxy(proxy.getProxy());
+                    }
+                    return new DeserializedHttpResponseGen<>(resp, t);
+                }
+            }
+        });
+
+        //Java 8 original implementation
+        /*
         return CompletableFuture.<DeserializedHttpResponseGen<T>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().resource(uri);
             ClientResponse resp = web.accept(accept).get(ClientResponse.class);
@@ -897,7 +1263,7 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 T t = resp.getEntity(expectedType);
                 if (t instanceof IHttpClientProxy) {
                     ((IHttpClientProxy) t).setProxy(proxy.getProxy());
@@ -905,17 +1271,35 @@ class LinkResolver {
                 return new DeserializedHttpResponseGen<>(resp, t);
             }
         });
+        */
     }
-       
+
     /**
      * Send a delete-Request
-     * 
-     * @param proxy The proxy which is used for communication
-     * @param uri   The uri on which to perform the request
-     * @param accept    accept-field of the header (specified, what request is accepted)
+     *
+     * @param proxy  The proxy which is used for communication
+     * @param uri    The uri on which to perform the request
+     * @param accept accept-field of the header (specified, what request is accepted)
      * @return A future performing the delete request
      */
-    static CompletableFuture<DeserializedHttpResponseGen<String>> deleteAsync(IHttpClientProxy proxy, URI uri, String accept) {
+    static CompletableFuture<DeserializedHttpResponseGen<String>> deleteAsync(final IHttpClientProxy proxy, final URI uri, final String accept) {
+
+return CompletableFuture.<DeserializedHttpResponseGen<String>>supplyAsync(new Supplier<DeserializedHttpResponseGen<String>>() {
+    @Override
+    public DeserializedHttpResponseGen<String> get() {
+        WebResource web = proxy.getProxy().getHttpClient().resource(uri);
+        ClientResponse resp = web.accept(accept).delete(ClientResponse.class);
+        if (resp.getStatus() < 200 || resp.getStatus() > 399) {
+            HttpClientRequestException e = HttpClientRequestException.create(resp);
+            return new DeserializedHttpResponseGen(resp, e);
+        } else {
+            if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
+            return new DeserializedHttpResponseGen<>(resp, resp.getEntity(String.class));
+        }
+    }
+});
+        //Java 8 original implementation
+        /*
         CompletableFuture fut = CompletableFuture.<DeserializedHttpResponseGen<String>>supplyAsync(() -> {
             WebResource web = proxy.getProxy().getHttpClient().resource(uri);
             ClientResponse resp = web.accept(accept).delete(ClientResponse.class);
@@ -923,10 +1307,12 @@ class LinkResolver {
                 HttpClientRequestException e = HttpClientRequestException.create(resp);
                 return new DeserializedHttpResponseGen(resp, e);
             } else {
-                if(resp.getStatus()==204) return new DeserializedHttpResponseGen(resp);
+                if (resp.getStatus() == 204) return new DeserializedHttpResponseGen(resp);
                 return new DeserializedHttpResponseGen<>(resp, resp.getEntity(String.class));
             }
-        });      
+        });
         return fut;
+        */
+
     }
 }

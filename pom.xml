@@ -4,7 +4,7 @@
 
     <groupId>io.ginko</groupId>
     <artifactId>docuware-java-client</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Docuware API REST Java Client</name>
@@ -29,7 +29,7 @@
 
     <scm>
         <connection>scm:git:git://github.com/dgautier/PlatformJavaClient.git</connection>
-        <developerConnection>scm:git:ssh://github.com:dgautier/PlatformJavaClient.git</developerConnection>
+        <developerConnection>scm:git:https://github.com/dgautier/PlatformJavaClient.git</developerConnection>
         <url>http://github.com/dgautier/PlatformJavaClient</url>
       <tag>docuware-java-client-1.0.0</tag>
   </scm>

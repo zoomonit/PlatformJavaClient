@@ -34,3 +34,7 @@ You are also encouraged to start a discussion by filing an issue or creating a [
 ## License
 *DocuWare Platform .NET Client* proudly uses the [MIT License](LICENSE).
 *Licenses for Third-Party-Files can be found in the affiliated JAR-Files
+
+## TODO
+* replace GregorianCalendar occurences with [Java 8 Date ](http://www.oracle.com/technetwork/articles/java/jf14-date-time-2125367.html)
+* replace GregorianCalendar occurences with [JodaTime](http://www.joda.org/joda-time/)

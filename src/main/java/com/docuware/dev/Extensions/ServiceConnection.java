@@ -498,13 +498,9 @@ public class ServiceConnection {
         return serviceDescription.getOrganizationsFromOrganizationsRelationAsync();
     }
 
-    public FileCabinet getFileCabinet(String fileCabinetId) {
+    public FileCabinet getFileCabinet(String fileCabinetId) throws URISyntaxException {
         // TODO: [CHW] Mach das ordentlich, wenn wir URL templates in der Platform haben.
-        URI url = null;
-        try {
-            url = new URI(client.getLinkResolver().getBaseUri().toString() + "/FileCabinets/" + fileCabinetId);
-        } catch (URISyntaxException ex) {
-        }
+        URI url = new URI(client.getLinkResolver().getBaseUri().toString() + "/FileCabinets/" + fileCabinetId);
         ClientResponse resp = client.resource(url).get(ClientResponse.class);
         if (resp.getStatus() < 200 || resp.getStatus() > 399) {
             HttpClientRequestException e = HttpClientRequestException.create(resp);

@@ -4,7 +4,7 @@
 
     <groupId>io.ginko</groupId>
     <artifactId>docuware-java-client</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Docuware API REST Java Client</name>
@@ -31,7 +31,6 @@
         <connection>scm:git:git://github.com/dgautier/PlatformJavaClient.git</connection>
         <developerConnection>scm:git:https://github.com/dgautier/PlatformJavaClient.git</developerConnection>
         <url>http://github.com/dgautier/PlatformJavaClient</url>
-      <tag>docuware-java-client-1.0.0</tag>
   </scm>
 
 
@@ -81,6 +80,14 @@
             <groupId>net.sourceforge.streamsupport</groupId>
             <artifactId>streamsupport-cfuture</artifactId>
             <version>1.5.3</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Logger -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.24</version>
             <scope>compile</scope>
         </dependency>
 

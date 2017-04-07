@@ -1,9 +1,6 @@
 package com.docuware.dev.Extensions;
 
 import java.io.InputStream;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.GregorianCalendar;
 
 /**
@@ -65,8 +62,8 @@ public class InputStreamWrapper implements IFileUploadInfo {
 
     @Override
     public GregorianCalendar getLastWriteTimeUtc() {
-        ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(lastModified), ZoneId.of("UTC"));
-        GregorianCalendar gc = GregorianCalendar.from(zdt);
+        GregorianCalendar gc = new GregorianCalendar();
+        gc.setTimeInMillis(lastModified);
         return gc;
     }
 

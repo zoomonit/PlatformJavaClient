@@ -406,6 +406,12 @@ public class ServiceConnection {
         return new ServiceConnection(serviceDescription);
     }
 
+    public static ServiceConnection create(String baseuri) {
+        client = new PlatformClient(baseuri, (ServiceConnectionTransportData)null);
+        ServiceDescription serviceDescription = client.getServiceDescription();
+        return new ServiceConnection(serviceDescription);
+    }
+
     private static CompletableFuture<ServiceConnection> createAsync(final MultivaluedMap<String, String> formData, final String uri, final String rel, final ServiceConnectionTransportData sclbd) {
 
         return CompletableFuture.<ServiceConnection>supplyAsync(new Supplier<ServiceConnection>() {

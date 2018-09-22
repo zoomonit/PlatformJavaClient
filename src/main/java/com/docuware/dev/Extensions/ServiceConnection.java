@@ -397,8 +397,9 @@ public class ServiceConnection {
             client = new PlatformClient(serviceUri, serviceConnectionTransportData);
             LinkResolver resolver = client.getLinkResolver();
 
-            ServiceDescription serviceDescription = client.getServiceDescription();
-            return new ServiceConnection(serviceDescription);
+                ServiceDescription serviceDescription = client.getServiceDescription();
+                return new ServiceConnection(serviceDescription);
+            }
         });
         */
     }
@@ -457,9 +458,12 @@ public class ServiceConnection {
             });
             //Java 8 original implementation
         /*
-                 return CompletableFuture.<ServiceConnection>supplyAsync(()-> {
-                 return createWindows(m, serviceUri, "windowsLogin", transport, credentials);
-            });
+                 return CompletableFuture.<ServiceConnection>supplyAsync(new Supplier<ServiceConnection>() {
+                     @Override
+                     public ServiceConnection get() {
+                         return createWindows(m, serviceUri, "windowsLogin", transport, credentials);
+                     }
+                 });
             */
         }
         return createAsync(m, serviceUri, "windowsLogin", serviceConnectionLoginData.getTransport());
@@ -537,7 +541,7 @@ public class ServiceConnection {
      * @return The list of all file cabinets
      */
     public List<FileCabinet> getAllFileCabinets(Iterable<Organization> organizations) {
-        List<FileCabinet> fcs = new LinkedList();
+        LinkedList<FileCabinet> fcs = new LinkedList<FileCabinet>();
         for (Organization o : organizations) {
             List<FileCabinet> fileCabinets = o.getFileCabinetsFromFilecabinetsRelation().getFileCabinet();
             fcs.addAll(fileCabinets);
@@ -647,7 +651,7 @@ public class ServiceConnection {
         }
         Param parameters = new Param(fileCabinetId, docId);
         URI uri = buildUri(parameters, "processDocumentAction");
-        CompletableFuture<DeserializedHttpResponseGen<Document>> fut = LinkResolver.<Document, DocumentActionInfo>putAsync(this.getServiceDescription(), uri, "application/xml", "application/xml", Document.class, DocumentActionInfo.class, "DocumentActionInfo", data);
+        CompletableFuture<DeserializedHttpResponseGen<Document>> fut = LinkResolver.putAsync(this.getServiceDescription(), uri, "application/xml", "application/xml", Document.class, DocumentActionInfo.class, "DocumentActionInfo", data);
         if (ct != null) ct.addFuture(fut);
         return fut;
     }

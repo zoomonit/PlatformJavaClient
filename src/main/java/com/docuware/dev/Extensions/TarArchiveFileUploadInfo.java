@@ -5,6 +5,9 @@
  */
 package com.docuware.dev.Extensions;
 
+import org.threeten.bp.ZoneId;
+import org.threeten.bp.ZonedDateTime;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -16,7 +19,7 @@ import java.util.logging.Logger;
  *
  * @author Patrick
  */
-public class TarArchiveFileUploadInfo implements IFileUploadInfo, AutoCloseable {
+public class TarArchiveFileUploadInfo implements IFileUploadInfo {
 
     private final IFileUploadInfo[] _files;
     private TarStream _stream;
@@ -55,7 +58,10 @@ public class TarArchiveFileUploadInfo implements IFileUploadInfo, AutoCloseable 
 
     @Override
     public GregorianCalendar getLastWriteTimeUtc() {
-        return GregorianCalendar.from(ZonedDateTime.now(ZoneId.of("UTC")));
+        ZonedDateTime zdt = ZonedDateTime.now(ZoneId.of("UTC"));
+        GregorianCalendar gc  = new GregorianCalendar();
+        gc.setTime(new Date(zdt.toEpochSecond()));
+        return gc;
     }
 
     @Override
@@ -85,8 +91,7 @@ public class TarArchiveFileUploadInfo implements IFileUploadInfo, AutoCloseable 
         }
     }
 
-    @Override
-    public void close() throws IOException {
+    public void close() {
         close(true);
     }
 

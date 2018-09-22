@@ -109,7 +109,7 @@ public class TarStream extends InputStream {
     }
 
     @Override
-    public int read() throws IOException {
+    public int read() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

@@ -722,6 +722,10 @@ class LinkResolver {
      */
     <P> String put(IHttpClientProxy proxy, Links links, String rel, P postData, String type, String accept) {
         ClientResponse resp = proxy.getProxy().getHttpClient().getClient().resource(LinkResolver.getLink(baseUri, links, rel)).type(type).accept(accept).put(ClientResponse.class, postData);
+        return getStringResponse(resp);
+    }
+
+    private String getStringResponse(ClientResponse resp) {
         if (resp.getStatus() < 200 || resp.getStatus() > 399) {
             HttpClientRequestException e = HttpClientRequestException.create(resp);
             throw e;

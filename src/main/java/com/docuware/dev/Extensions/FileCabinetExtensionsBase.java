@@ -58,7 +58,7 @@ public class FileCabinetExtensionsBase {
     public static CompletableFuture<DeserializedHttpResponseGen<ImportResult>> importArchiveAsync(FileCabinet fileCabinet, ImportSettings settings, IFileUploadInfo file) {
         String rel = findRelFromLink(fileCabinet.getImportDocumentsRelationLink(), fileCabinet.getLinks());
         MultiPart mul = getMultipart(settings, file);
-        return MethodInvocation.<ImportResult, MultiPart>postMultipartAsync(fileCabinet, fileCabinet.getLinks(), rel, ImportResult.class, mul);
+        return MethodInvocation.postMultipartAsync(fileCabinet, fileCabinet.getLinks(), rel, ImportResult.class, mul);
 
     }
 
@@ -72,7 +72,7 @@ public class FileCabinetExtensionsBase {
     public static ImportResult importArchive(FileCabinet fileCabinet, ImportSettings settings, IFileUploadInfo file) {
         String rel = findRelFromLink(fileCabinet.getImportDocumentsRelationLink(), fileCabinet.getLinks());
         MultiPart mul = getMultipart(settings, file);
-        return MethodInvocation.<ImportResult, MultiPart>postMultipart(fileCabinet, fileCabinet.getLinks(), rel, ImportResult.class, mul);
+        return MethodInvocation.postMultipart(fileCabinet, fileCabinet.getLinks(), rel, ImportResult.class, mul);
     }
 
     /**
@@ -86,7 +86,7 @@ public class FileCabinetExtensionsBase {
     public static ImportResult synchronize(FileCabinet fileCabinet, SynchronizationSettings settings, IFileUploadInfo file) {
         String rel = findRelFromLink(fileCabinet.getImportDocumentsRelationLink(), fileCabinet.getLinks());
         MultiPart mul = getMultipart(settings, file);
-        return MethodInvocation.<ImportResult, MultiPart>postMultipart(fileCabinet, fileCabinet.getLinks(), rel, ImportResult.class, mul);
+        return MethodInvocation.postMultipart(fileCabinet, fileCabinet.getLinks(), rel, ImportResult.class, mul);
     }
 
     /**
@@ -100,7 +100,7 @@ public class FileCabinetExtensionsBase {
     public static CompletableFuture<DeserializedHttpResponseGen<ImportResult>> synchronizeAsync(FileCabinet fileCabinet, SynchronizationSettings settings, IFileUploadInfo file) {
         String rel = findRelFromLink(fileCabinet.getImportDocumentsRelationLink(), fileCabinet.getLinks());
         MultiPart mul = getMultipart(settings, file);
-        return MethodInvocation.<ImportResult, MultiPart>postMultipartAsync(fileCabinet, fileCabinet.getLinks(), rel, ImportResult.class, mul);
+        return MethodInvocation.postMultipartAsync(fileCabinet, fileCabinet.getLinks(), rel, ImportResult.class, mul);
     }
 
     /**
@@ -114,7 +114,7 @@ public class FileCabinetExtensionsBase {
     public static CompletableFuture<DeserializedHttpResponseGen<Document>> uploadDocumentAsync(FileCabinet fileCabinet, Document document, IFileUploadInfo[] file) {
         String rel = findRelFromLink(fileCabinet.getDocumentsRelationLink(), fileCabinet.getLinks());
         MultiPart mul = getMultipart(document, file);
-        return MethodInvocation.<Document, MultiPart>postMultipartAsync(fileCabinet, fileCabinet.getLinks(), rel, Document.class, mul);
+        return MethodInvocation.postMultipartAsync(fileCabinet, fileCabinet.getLinks(), rel, Document.class, mul);
     }
 
     /**
@@ -128,7 +128,7 @@ public class FileCabinetExtensionsBase {
     public static Document uploadDocument(FileCabinet fileCabinet, Document document, IFileUploadInfo[] file) {
         String rel = findRelFromLink(fileCabinet.getDocumentsRelationLink(), fileCabinet.getLinks());
         MultiPart mul = getMultipart(document, file);
-        return MethodInvocation.<Document, MultiPart>postMultipart(fileCabinet, fileCabinet.getLinks(), rel, Document.class, mul);
+        return MethodInvocation.postMultipart(fileCabinet, fileCabinet.getLinks(), rel, Document.class, mul);
     }
 
    /**
@@ -141,7 +141,7 @@ public class FileCabinetExtensionsBase {
     public static CompletableFuture<DeserializedHttpResponseGen<Document>> uploadDocumentAsync(FileCabinet fileCabinet, IFileUploadInfo[] file) {
         String rel = findRelFromLink(fileCabinet.getDocumentsRelationLink(), fileCabinet.getLinks());
         MultiPart mul = getMultipart(null, file);
-        return MethodInvocation.<Document, MultiPart>postMultipartAsync(fileCabinet, fileCabinet.getLinks(), rel, Document.class, mul);
+        return MethodInvocation.postMultipartAsync(fileCabinet, fileCabinet.getLinks(), rel, Document.class, mul);
 
     }
 
@@ -155,7 +155,7 @@ public class FileCabinetExtensionsBase {
     public static Document uploadDocument(FileCabinet fileCabinet, IFileUploadInfo[] file) {
         String rel = findRelFromLink(fileCabinet.getDocumentsRelationLink(), fileCabinet.getLinks());
         MultiPart mul = getMultipart(null, file);
-        return MethodInvocation.<Document, MultiPart>postMultipart(fileCabinet, fileCabinet.getLinks(), rel, Document.class, mul);
+        return MethodInvocation.postMultipart(fileCabinet, fileCabinet.getLinks(), rel, Document.class, mul);
 
     }
 
@@ -170,7 +170,7 @@ public class FileCabinetExtensionsBase {
     public static Document uploadDocument(DialogInfo dialog, Document document, IFileUploadInfo[] file) {
         String rel = findRelFromLink(dialog.getStoreDocumentRelationLink(), dialog.getLinks());
         MultiPart mul = getMultipart(document, file);
-        return MethodInvocation.<Document, MultiPart>postMultipart(dialog, dialog.getLinks(), rel, Document.class, mul);
+        return MethodInvocation.postMultipart(dialog, dialog.getLinks(), rel, Document.class, mul);
 
     }
 
@@ -185,7 +185,7 @@ public class FileCabinetExtensionsBase {
     public static CompletableFuture<DeserializedHttpResponseGen<Document>> uploadDocumentAsync(DialogInfo dialog, Document document, IFileUploadInfo[] file) {
         String rel = findRelFromLink(dialog.getStoreDocumentRelationLink(), dialog.getLinks());
         MultiPart mul = getMultipart(document, file);
-        return MethodInvocation.<Document, MultiPart>postMultipartAsync(dialog, dialog.getLinks(), rel, Document.class, mul);
+        return MethodInvocation.postMultipartAsync(dialog, dialog.getLinks(), rel, Document.class, mul);
 
     }
 
@@ -293,7 +293,7 @@ public class FileCabinetExtensionsBase {
     public static Document addDocumentSections(Document document, IFileUploadInfo[] file) {
         String rel = findRelFromLink(document.getSelfRelationLink(), document.getLinks());
         MultiPart mul = getMultipart(null, file);
-        return MethodInvocation.<Document, MultiPart>postMultipart(document, document.getLinks(), rel, Document.class, mul);
+        return MethodInvocation.postMultipart(document, document.getLinks(), rel, Document.class, mul);
     }
 
     /**
@@ -307,7 +307,7 @@ public class FileCabinetExtensionsBase {
     public static CompletableFuture<DeserializedHttpResponseGen<Document>> addDocumentSectionsAsync(Document document, IFileUploadInfo[] file) {
         String rel = findRelFromLink(document.getSelfRelationLink(), document.getLinks());
         MultiPart mul = getMultipart(null, file);
-        return MethodInvocation.<Document, MultiPart>postMultipartAsync(document, document.getLinks(), rel, Document.class, mul);
+        return MethodInvocation.postMultipartAsync(document, document.getLinks(), rel, Document.class, mul);
     }
 
     /**
@@ -320,7 +320,7 @@ public class FileCabinetExtensionsBase {
     public static CompletableFuture<DeserializedHttpResponseGen<Section>> uploadSectionAsync(Document document, IFileUploadInfo file) {
         String rel = findRelFromLink(document.getSectionsRelationLink(), document.getLinks());
         MultiPart mul = getMultipart(null, file);
-        return MethodInvocation.<Section, MultiPart>postMultipartAsync(document, document.getLinks(), rel, Section.class, mul);
+        return MethodInvocation.postMultipartAsync(document, document.getLinks(), rel, Section.class, mul);
     }
 
     /**
@@ -381,7 +381,7 @@ public class FileCabinetExtensionsBase {
      * @return  Returns the result of the import operation
      */
     public static CompletableFuture<DeserializedHttpResponseGen<ImportResult>> chunkImportArchiveAsync(FileCabinet fileCabinet, ImportSettings importSettings, IFileUploadInfo file, int chunkSize) {
-        return FileCabinetExtensionsBase.<ImportResult>chunkUploadFileAsync(fileCabinet.getImportDocumentsRelationLink(), ((IRelationsWithProxy) fileCabinet), file, chunkSize, importSettings, ImportResult.class);
+        return FileCabinetExtensionsBase.chunkUploadFileAsync(fileCabinet.getImportDocumentsRelationLink(), fileCabinet, file, chunkSize, importSettings, ImportResult.class);
     }
     
       /**
@@ -408,7 +408,7 @@ public class FileCabinetExtensionsBase {
      * @return  Returns the result of the import operation
      */
     public static ImportResult chunkImportArchive(FileCabinet fileCabinet, ImportSettings importSettings, IFileUploadInfo file, int chunkSize) {
-        return FileCabinetExtensionsBase.<ImportResult>chunkUploadFile(fileCabinet.getImportDocumentsRelationLink(), ((IRelationsWithProxy) fileCabinet), file, chunkSize, importSettings, ImportResult.class);
+        return FileCabinetExtensionsBase.chunkUploadFile(fileCabinet.getImportDocumentsRelationLink(), fileCabinet, file, chunkSize, importSettings, ImportResult.class);
     }
     
      /**
@@ -434,7 +434,7 @@ public class FileCabinetExtensionsBase {
      * @return  Returns the result of the synchronization operation
      */
     static CompletableFuture<DeserializedHttpResponseGen<ImportResult>> chunkSynchronizeAsync(FileCabinet fileCabinet, SynchronizationSettings synchronizationSettings, IFileUploadInfo file, int chunkSize) {
-        return FileCabinetExtensionsBase.<ImportResult>chunkUploadFileAsync(fileCabinet.getImportDocumentsRelationLink(), ((IRelationsWithProxy) fileCabinet), file, chunkSize, synchronizationSettings, ImportResult.class);
+        return FileCabinetExtensionsBase.chunkUploadFileAsync(fileCabinet.getImportDocumentsRelationLink(), fileCabinet, file, chunkSize, synchronizationSettings, ImportResult.class);
     }
     
     /**
@@ -460,7 +460,7 @@ public class FileCabinetExtensionsBase {
      * @return  Returns the result of the synchronization operation
      */
     public static ImportResult chunkSynchronize(FileCabinet fileCabinet, SynchronizationSettings synchronizationSettings, IFileUploadInfo file, int chunkSize) {
-        return FileCabinetExtensionsBase.<ImportResult>chunkUploadFile(fileCabinet.getImportDocumentsRelationLink(), ((IRelationsWithProxy) fileCabinet), file, chunkSize, synchronizationSettings, ImportResult.class);
+        return FileCabinetExtensionsBase.chunkUploadFile(fileCabinet.getImportDocumentsRelationLink(), fileCabinet, file, chunkSize, synchronizationSettings, ImportResult.class);
     }
     
      /**
@@ -742,7 +742,7 @@ public class FileCabinetExtensionsBase {
      * @return  The changed section's metadata
      */
     static CompletableFuture<DeserializedHttpResponseGen<Section>> chunkUploadSectionAsync(Section section, IFileUploadInfo file, int chunkSize) {
-        return FileCabinetExtensionsBase.<Section>chunkUploadFileAsync(section.getContentRelationLink(), (IRelationsWithProxy) section, file, chunkSize, null, Section.class);
+        return FileCabinetExtensionsBase.chunkUploadFileAsync(section.getContentRelationLink(), section, file, chunkSize, null, Section.class);
     }
     
     /**
@@ -768,7 +768,7 @@ public class FileCabinetExtensionsBase {
      * @return  The changed section's metadata
      */
     public static Section chunkUploadSection(Section section, IFileUploadInfo file, int chunkSize) {
-        return FileCabinetExtensionsBase.<Section>chunkUploadFile(section.getContentRelationLink(), (IRelationsWithProxy) section, file, chunkSize, null, Section.class);
+        return FileCabinetExtensionsBase.chunkUploadFile(section.getContentRelationLink(), section, file, chunkSize, null, Section.class);
     }
     
     /**
@@ -793,7 +793,7 @@ public class FileCabinetExtensionsBase {
      * @return  The new section's metadata
      */
     static CompletableFuture<DeserializedHttpResponseGen<Section>> chunkAddSectionAsync(Document document, IFileUploadInfo file, int chunkSize) {
-        return FileCabinetExtensionsBase.<Section>chunkUploadFileAsync(document.getSectionsRelationLink(), ((IRelationsWithProxy) document), file, chunkSize, null, Section.class);
+        return FileCabinetExtensionsBase.chunkUploadFileAsync(document.getSectionsRelationLink(), document, file, chunkSize, null, Section.class);
     }
     
     /**
@@ -817,7 +817,7 @@ public class FileCabinetExtensionsBase {
      * @return  The new section's metadata
      */
     public static Section chunkAddSection(Document document, IFileUploadInfo file, int chunkSize) {
-        return FileCabinetExtensionsBase.<Section>chunkUploadFile(document.getSectionsRelationLink(), ((IRelationsWithProxy) document), file, chunkSize, null, Section.class);
+        return FileCabinetExtensionsBase.chunkUploadFile(document.getSectionsRelationLink(), document, file, chunkSize, null, Section.class);
     }
     
     /**
@@ -887,7 +887,7 @@ public class FileCabinetExtensionsBase {
                         String rel = findRelFromLink(link, proxy.getLinks());
                         T doc;
                         ClientResponse resp;
-                        if (addDocumentMetaData == true) {
+                        if (addDocumentMetaData) {
                             MultiPart mul;
                             BodyPart bp = new BodyPart(streamContent, MediaType.valueOf(file.getContentType()));
                             bp.getHeaders().add(HttpHeaders.CONTENT_TYPE, file.getContentType());

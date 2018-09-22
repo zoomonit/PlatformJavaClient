@@ -275,7 +275,6 @@ public class UriTemplateResolver {
             {
                 result.append(c);
             } else {
-                ;
                 result.append("%").append(Integer.toHexString((int) c));
             }
         }

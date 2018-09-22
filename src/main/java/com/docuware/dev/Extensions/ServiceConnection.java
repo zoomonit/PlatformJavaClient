@@ -70,7 +70,7 @@ public class ServiceConnection {
      * <p>
      * Remark:
      * After the function returns, all requests from all objects created by this {@link ServiceConnection} instance
-     * are sent through the new HttpClient instance. Then both {@link otherServiceConnection} and this {@link ServiceConnection} instance
+     * are sent through the new HttpClient instance. Then both other{@link ServiceConnection} and this {@link ServiceConnection} instance
      * share the same HttpClient instance.
      *
      * @param otherServiceConnection The {@link ServiceConnection} instance whose HttpClient instance is used for further communucation
@@ -144,7 +144,9 @@ public class ServiceConnection {
                                            String[] userAgent) {
         try {
             return createAsync(serviceUri, userName, password, organization, licenseType, httpClientHandler, userAgent).get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e.getLocalizedMessage());
+        } catch (ExecutionException e) {
             throw new RuntimeException(e.getLocalizedMessage());
         }
     }
@@ -167,7 +169,9 @@ public class ServiceConnection {
                                                   String[] userAgent) {
         try {
             return createTrustedAsync(serviceUri, impersonatedUser, trustedUser, password, organization, licenseType, httpClientHandler, userAgent).get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e.getLocalizedMessage());
+        } catch (ExecutionException e) {
             throw new RuntimeException(e.getLocalizedMessage());
         }
     }
@@ -187,7 +191,9 @@ public class ServiceConnection {
                                            String[] userAgent) {
         try {
             return createAsync(serviceUri, token, licenseType, httpClientHandler, userAgent).get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e.getLocalizedMessage());
+        } catch (ExecutionException e) {
             throw new RuntimeException(e.getLocalizedMessage());
         }
     }
@@ -205,7 +211,9 @@ public class ServiceConnection {
                                            String[] userAgent) {
         try {
             return createAsyncNoConnection(serviceUri, httpClientHandler, userAgent).get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e.getLocalizedMessage());
+        } catch (ExecutionException e) {
             throw new RuntimeException(e.getLocalizedMessage());
         }
     }
@@ -460,7 +468,9 @@ public class ServiceConnection {
     static public ServiceConnection createWithWindowsAuthentication(String serviceUri, Credentials credentials, ServiceConnectionLoginData serviceConnectionLoginData) {
         try {
             return createWithWindowsAuthenticationAsync(serviceUri, credentials, serviceConnectionLoginData).get();
-        } catch (InterruptedException | ExecutionException ex) {
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex.getCause());
+        } catch (ExecutionException ex) {
             throw new RuntimeException(ex.getCause());
         }
     }
@@ -470,7 +480,9 @@ public class ServiceConnection {
         NTCredentials c = new NTCredentials(userName, password, System.getenv("COMPUTERNAME"), domain);
         try {
             return createWithWindowsAuthenticationAsync(serviceUri, c, ServiceConnectionLoginData.Create(organization, licenseType, httpClientHandler, userAgent)).get();
-        } catch (InterruptedException | ExecutionException ex) {
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex.getCause());
+        } catch (ExecutionException ex) {
             throw new RuntimeException(ex.getCause());
         }
     }
@@ -564,7 +576,7 @@ public class ServiceConnection {
      * @return A task which creates a URL with an authenticated user information inside
      */
     public CompletableFuture<DeserializedHttpResponseGen<String>> createPermanentUrlAsync(String url) {
-        final HashMap<String, String> parameters = new HashMap<>();
+        final HashMap<String, String> parameters = new HashMap<String, String>();
         parameters.put("url", url);
 
         return CompletableFuture.<DeserializedHttpResponseGen<String>>supplyAsync(new Supplier<DeserializedHttpResponseGen<String>>() {
@@ -576,7 +588,7 @@ public class ServiceConnection {
                     HttpClientRequestException e = HttpClientRequestException.create(resp);
                     return new DeserializedHttpResponseGen(resp, e);
                 } else {
-                    return new DeserializedHttpResponseGen<>(resp, resp.getEntity(String.class));
+                    return new DeserializedHttpResponseGen<String>(resp, resp.getEntity(String.class));
                 }
             }
         });
@@ -607,7 +619,9 @@ public class ServiceConnection {
     public String getPermanentUrl(String url) {
         try {
             return createPermanentUrlAsync(url).get().getContent();
-        } catch (InterruptedException | ExecutionException ex) {
+        } catch (InterruptedException ex) {
+            throw new RuntimeException("Error on Resolving Async Process");
+        } catch (ExecutionException ex) {
             throw new RuntimeException("Error on Resolving Async Process");
         }
 
@@ -706,7 +720,7 @@ public class ServiceConnection {
                     HttpClientRequestException e = HttpClientRequestException.create(resp);
                     return new DeserializedHttpResponseGen(resp, e);
                 } else {
-                    return new DeserializedHttpResponseGen<>(resp, resp.getEntity(String.class));
+                    return new DeserializedHttpResponseGen<String>(resp, resp.getEntity(String.class));
                 }
             }
         });

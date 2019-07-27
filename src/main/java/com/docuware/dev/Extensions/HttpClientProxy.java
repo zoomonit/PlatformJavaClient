@@ -15,6 +15,10 @@ public class HttpClientProxy {
 
     PlatformClient httpClient;
 
+    public HttpClientProxy(){
+
+    }
+
     /**
      * Initializes a new instance of the HttpClientProxy class
      * @param httpClient    The HTTP client

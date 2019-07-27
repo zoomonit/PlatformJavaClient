@@ -4,6 +4,7 @@ import com.docuware.dev.schema._public.services.platform.ServiceDescription;
 import com.sun.jersey.api.client.*;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.filter.ClientFilter;
+import com.sun.jersey.api.client.filter.LoggingFilter;
 import com.sun.jersey.client.apache.ApacheHttpClient;
 import com.sun.jersey.client.apache.ApacheHttpClientHandler;
 import com.sun.jersey.client.apache.config.ApacheHttpClientConfig;
@@ -125,7 +126,7 @@ class PlatformClient {
         }
         localClient.setReadTimeout(Integer.parseInt(platformClientRequestTimeout)*1000);
         localClient.setConnectTimeout(Integer.parseInt(platformClientRequestTimeout)*1000);
-        // localClient.addFilter(new LoggingFilter(System.out));
+        localClient.addFilter(new LoggingFilter());
         System.setProperty("com.sun.jersey.impl.client.httpclient.handleCookies", "true");
         System.setProperty("http.protocol.handle-redirects", "true");
 

@@ -112,6 +112,15 @@ class PlatformClient {
             public ClientResponse handle(ClientRequest cr) throws ClientHandlerException {
                cr.getHeaders().add(HttpHeaders.USER_AGENT, System.getProperty("java.specification.name").replace("Specification", "").trim().replace(" ", "+")+"/"+System.getProperty("java.version"));
                cr.getHeaders().add(HttpHeaders.USER_AGENT, config.getProperty("name")+"/"+config.getProperty("version"));
+
+               String dwCulture = null;
+               try {
+            	   dwCulture = config.getProperty("culture");
+            	   cr.getHeaders().add(HttpHeaders.COOKIE, String.format("%s=%s", "DWFormatCulture", dwCulture)); //needed in newer versions otherwise the format of date values won't work
+               } catch (Exception ex) {
+                   Logger.getLogger(PlatformClient.class.getName()).log(Level.INFO, null, ex);
+               }
+
                 return getNext().handle(cr);
             }
         });

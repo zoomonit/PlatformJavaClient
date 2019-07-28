@@ -38,6 +38,7 @@ public class ServiceConnection {
 
     private final ServiceDescription serviceDescription;
     private static PlatformClient client;
+    private static String hostId;
 
     /**
      * @param serviceDescription
@@ -83,8 +84,8 @@ public class ServiceConnection {
      * Disconnects the Instance
      */
     public void disconnect() {
-        ClientResponse resp = MethodInvocation.get(serviceDescription, serviceDescription.getLinks(), "logout", ClientResponse.class);
-        resp.close();
+        MethodInvocation.get(serviceDescription, serviceDescription.getLinks(), "logout", null);
+
         client.getClient().getClientHandler().getHttpClient().getHttpConnectionManager().closeIdleConnections(1);
         client.getClient().destroy();
     }
@@ -108,6 +109,10 @@ public class ServiceConnection {
             MethodInvocation.getAsync(serviceDescription, serviceDescription.getLinks(), "logout", null);
         });
         */
+    }
+
+    public static void SetHostId(String HostId){
+        hostId = HostId;
     }
 
     /**
@@ -396,6 +401,10 @@ public class ServiceConnection {
     }
 
     private static ServiceConnection create(MultivaluedMap<String, String> formData, String baseuri, String rel, ServiceConnectionTransportData sclbd) {
+        if(hostId != null){
+            formData.add("HostId", hostId);
+        }
+
         client = new PlatformClient(baseuri, sclbd);
         LinkResolver resolver = client.getLinkResolver();
         ServiceDescription serviceDescription = client.getServiceDescription();
